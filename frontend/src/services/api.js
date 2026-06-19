@@ -1,0 +1,84 @@
+import axios from 'axios';
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const api = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+});
+
+// Attach auth token to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('sw_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle auth errors globally
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('sw_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const productAPI = {
+  getAll: (params) => api.get('/products', { params }),
+  getBySlug: (slug) => api.get(`/products/${slug}`),
+  getCategories: () => api.get('/products/categories'),
+};
+
+export const blendAPI = {
+  getAll: () => api.get('/blends'),
+  getById: (id) => api.get(`/blends/${id}`),
+  estimatePrice: (items) => api.post('/blends/price-estimate', { items }),
+  save: (data) => api.post('/blends/save', data),
+  getMine: () => api.get('/blends/user/mine'),
+  unsave: (id) => api.delete(`/blends/save/${id}`),
+};
+
+export const cartAPI = {
+  get: () => api.get('/cart'),
+  add: (data) => api.post('/cart/add', data),
+  update: (data) => api.put('/cart/update', data),
+  remove: (productId) => api.delete(`/cart/remove/${productId}`),
+  clear: () => api.delete('/cart/clear'),
+};
+
+export const orderAPI = {
+  getMine: () => api.get('/orders/mine'),
+  getById: (id) => api.get(`/orders/${id}`),
+  create: (data) => api.post('/orders', data),
+};
+
+export const paymentAPI = {
+  createOrder: (data) => api.post('/payments/create-order', data),
+  verify: (data) => api.post('/payments/verify', data),
+};
+
+export const authAPI = {
+  getMe: () => api.get('/auth/me'),
+  updateProfile: (data) => api.put('/auth/profile', data),
+  addAddress: (data) => api.post('/auth/addresses', data),
+  deleteAddress: (id) => api.delete(`/auth/addresses/${id}`),
+};
+
+export const adminAPI = {
+  getStats: () => api.get('/admin/stats'),
+  getProducts: () => api.get('/admin/products'),
+  createProduct: (data) => api.post('/admin/products', data),
+  updateProduct: (id, data) => api.put(`/admin/products/${id}`, data),
+  deleteProduct: (id) => api.delete(`/admin/products/${id}`),
+  getOrders: (params) => api.get('/admin/orders', { params }),
+  updateOrderStatus: (id, status) => api.put(`/admin/orders/${id}/status`, { status }),
+  createBlend: (data) => api.post('/admin/blends', data),
+  createCategory: (data) => api.post('/admin/categories', data),
+};
+
+export default api;

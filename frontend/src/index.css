@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-bark-900 font-sans antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-chilli-600 text-white font-semibold rounded-xl
+           hover:bg-chilli-700 active:scale-95 transition-all duration-200 shadow-spice
+           focus:outline-none focus:ring-2 focus:ring-chilli-400 focus:ring-offset-2;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-chilli-600 text-chilli-600 font-semibold rounded-xl
+           hover:bg-chilli-600 hover:text-white active:scale-95 transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-chilli-400 focus:ring-offset-2;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-spice-500 text-white font-semibold rounded-xl
+           hover:bg-spice-600 active:scale-95 transition-all duration-200 shadow-gold
+           focus:outline-none focus:ring-2 focus:ring-spice-400 focus:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-bark-700 font-medium rounded-lg
+           hover:bg-spice-50 hover:text-chilli-600 active:scale-95 transition-all duration-200;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-2xl shadow-glass border border-spice-100 overflow-hidden;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-spice hover:-translate-y-1 transition-all duration-300;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+
+  /* Input fields */
+  .input {
+    @apply w-full px-4 py-3 bg-white border border-spice-200 rounded-xl text-bark-900 placeholder-bark-400
+           focus:outline-none focus:ring-2 focus:ring-chilli-400 focus:border-transparent
+           transition-all duration-200;
+  }
+
+  .label {
+    @apply block text-sm font-semibold text-bark-700 mb-1.5;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-gold {
+    @apply badge bg-spice-100 text-spice-700;
+  }
+
+  .badge-red {
+    @apply badge bg-chilli-100 text-chilli-700;
+  }
+
+  .badge-green {
+    @apply badge bg-green-100 text-green-700;
+  }
+
+  /* Section container */
+  .section {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-chilli-600 to-spice-500 bg-clip-text text-transparent;
+  }
+
+  /* Spice tag */
+  .spice-tag {
+    @apply px-3 py-1 bg-spice-100 text-spice-700 text-sm rounded-full font-medium;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    @apply w-6 h-6 border-2 border-chilli-200 border-t-chilli-600 rounded-full animate-spin;
+  }
+
+  /* Star rating */
+  .star-filled {
+    @apply text-spice-400 fill-current;
+  }
+  .star-empty {
+    @apply text-bark-300;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

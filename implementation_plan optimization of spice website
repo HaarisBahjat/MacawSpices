@@ -1,0 +1,29 @@
+# Performance & Production Grade Optimization Plan
+
+This plan focuses on making your frontend application significantly faster to load by implementing code-splitting, lazy loading, and other performance best practices.
+
+## Proposed Changes
+
+### 1. Code Splitting & Route Lazy Loading
+Currently, all pages (Home, Products, Admin, Checkout, etc.) are bundled into a single massive JavaScript file. We will split this bundle.
+#### [MODIFY] [App.jsx](file:///c:/Users/Dell/OneDrive/Desktop/spiceWallah/frontend/src/App.jsx)
+- Import all `pages/*` components using `React.lazy()`.
+- Wrap the `<Routes>` block in a `<Suspense>` component with a beautiful, themed loading spinner as the fallback. 
+- *Impact:* The browser will only download the JavaScript required for the page the user is currently viewing, dramatically improving the initial load time.
+
+### 2. Image Lazy Loading
+Your application uses many high-quality images from Unsplash. Loading them all simultaneously slows down rendering.
+#### [MODIFY] [ProductCard.jsx](file:///c:/Users/Dell/OneDrive/Desktop/spiceWallah/frontend/src/components/ProductCard.jsx)
+#### [MODIFY] [ProductDetailPage.jsx](file:///c:/Users/Dell/OneDrive/Desktop/spiceWallah/frontend/src/pages/ProductDetailPage.jsx)
+#### [MODIFY] [HomePage.jsx](file:///c:/Users/Dell/OneDrive/Desktop/spiceWallah/frontend/src/pages/HomePage.jsx)
+- Add `loading="lazy"` attributes to all heavy `<img>` tags.
+- *Impact:* Images will only be downloaded when they are about to enter the user's viewport (when scrolling down), saving bandwidth and processing power.
+
+### 3. Loading Component
+#### [NEW] `frontend/src/components/PageLoader.jsx`
+- Create a dedicated, lightweight loading component to display while lazy-loaded chunks are being fetched from the server.
+
+## Verification Plan
+1. Check the Vite development server output to verify that code has been split into multiple chunks (e.g. `index-[hash].js`, `HomePage-[hash].js`).
+2. Navigate around the application and confirm the `<PageLoader />` briefly appears during transitions.
+3. Use the browser's Network Tab to confirm images below the fold are not loaded until scrolled into view.

@@ -1,0 +1,171 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  role        Role     @default(CUSTOMER)
+  phone       String?
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  addresses   Address[]
+  orders      Order[]
+  reviews     Review[]
+  savedBlends SavedBlend[]
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  imageUrl String?
+  products Product[]
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  categoryId    String
+  pricePerGram  Float
+  stock         Float
+  minOrderGram  Float    @default(50)
+  images        String[]
+  featured      Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  flavorProfile String?
+  origin        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category    Category    @relation(fields: [categoryId], references: [id])
+  reviews     Review[]
+  blendItems  BlendItem[]
+  orderItems  OrderItem[]
+}
+
+model BlendTemplate {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String?
+  imageUrl    String?
+  tags        String[]
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+
+  items       BlendItem[]
+  savedBlends SavedBlend[]
+}
+
+model BlendItem {
+  id              String        @id @default(cuid())
+  blendTemplateId String
+  productId       String
+  weightGrams     Float
+
+  blendTemplate   BlendTemplate @relation(fields: [blendTemplateId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id])
+}
+
+model SavedBlend {
+  id              String        @id @default(cuid())
+  userId          String
+  blendTemplateId String
+  customName      String?
+  createdAt       DateTime      @default(now())
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blendTemplate   BlendTemplate @relation(fields: [blendTemplateId], references: [id])
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  label     String  @default("Home")
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  pincode   String
+  isDefault Boolean @default(false)
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders    Order[]
+}
+
+model Order {
+  id                  String      @id @default(cuid())
+  userId              String
+  addressId           String
+  status              OrderStatus @default(PENDING)
+  totalAmount         Float
+  razorpayOrderId     String?     @unique
+  razorpayPaymentId   String?
+  razorpaySignature   String?
+  isPaid              Boolean     @default(false)
+  notes               String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  user      User        @relation(fields: [userId], references: [id])
+  address   Address     @relation(fields: [addressId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  productId  String?
+  blendName  String?
+  blendData  Json?
+  quantity   Float
+  unitPrice  Float
+  totalPrice Float
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
