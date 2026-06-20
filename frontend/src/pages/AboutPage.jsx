@@ -25,7 +25,7 @@ const AboutPage = () => {
           >
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white mb-4 md:mb-6 leading-tight">
-              A Legacy of <br /> <span className="text-spice-400">Pure Authenticity</span>
+              A Legacy of <br /> <span className="text-[#E7E1B1]">Pure Authenticity</span>
             </h1>
             <p className="text-xl md:text-2xl text-bark-200 max-w-3xl mx-auto leading-relaxed">
               We travel the ancient trade routes to bring you the world's most premium, ethically-sourced spices. No middle-men, no compromises. Just the true essence of flavor.
@@ -53,7 +53,7 @@ const AboutPage = () => {
             className="space-y-6 text-lg text-bark-700 leading-relaxed font-medium"
           >
             <p>
-              At SpiceWallah, we believe that cooking is an act of love, and the ingredients you use should be worthy of that sentiment. For too long, the spice industry has been clouded by long supply chains, excessive processing, and faded flavors sitting on supermarket shelves for years.
+              At MacawSpice, we believe that cooking is an act of love, and the ingredients you use should be worthy of that sentiment. For too long, the spice industry has been clouded by long supply chains, excessive processing, and faded flavors sitting on supermarket shelves for years.
             </p>
             <p>
               We exist to change that. We see spices not just as ingredients, but as living, breathing histories. Every pinch of saffron, every crack of black pepper carries the soil, the sun, and the soul of the region it was grown in. Our mission is to preserve that soul from the farm directly to your kitchen.
@@ -136,7 +136,7 @@ const AboutPage = () => {
         
         <div className="section relative z-10 px-4 md:px-8">
           <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 md:mb-6">The SpiceWallah Standard</h2>
+            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 md:mb-6">The MacawSpice Standard</h2>
             <p className="text-bark-300 text-lg">
               We evaluate our spices on three uncompromising pillars of quality. If a harvest doesn't meet all three, we simply don't buy it.
             </p>

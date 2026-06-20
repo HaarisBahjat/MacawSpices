@@ -61,7 +61,7 @@ export default function Navbar() {
             </div>
             <div>
               <span className="font-display font-bold text-xl text-bark-900">Spice</span>
-              <span className="font-display font-bold text-xl text-chilli-600">Wallah</span>
+              <span className="font-display font-bold text-xl text-chilli-600">Spice</span>
             </div>
           </Link>
 

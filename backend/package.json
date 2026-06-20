@@ -1,7 +1,7 @@
 {
-  "name": "spicewallah-backend",
+  "name": "macawspice-backend",
   "version": "1.0.0",
-  "description": "SpiceWallah API Server",
+  "description": "MacawSpice API Server",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

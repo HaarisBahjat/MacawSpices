@@ -32,7 +32,7 @@ const useWishlistStore = create(
       }
     }),
     {
-      name: 'spicewallah-wishlist',
+      name: 'macawspice-wishlist',
     }
   )
 );

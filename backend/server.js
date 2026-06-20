@@ -10,7 +10,7 @@ const startServer = async () => {
     console.log('✅ Database connected');
 
     app.listen(PORT, () => {
-      console.log(`🌶️  SpiceWallah API running on port ${PORT}`);
+      console.log(`🌶️  MacawSpice API running on port ${PORT}`);
       console.log(`   Environment: ${process.env.NODE_ENV}`);
     });
   } catch (error) {

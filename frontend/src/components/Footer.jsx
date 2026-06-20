@@ -16,7 +16,7 @@ export default function Footer() {
               </div>
               <div>
                 <span className="font-display font-bold text-xl text-white">Spice</span>
-                <span className="font-display font-bold text-xl text-chilli-400">Wallah</span>
+                <span className="font-display font-bold text-xl text-chilli-400">Spice</span>
               </div>
             </div>
             <p className="text-spice-300 text-sm leading-relaxed">
@@ -67,7 +67,7 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2 text-spice-300">
                 <FiMail className="text-chilli-400 shrink-0" />
-                hello@spicewallah.in
+                hello@macawspice.in
               </li>
               <li className="flex items-center gap-2 text-spice-300">
                 <FiPhone className="text-chilli-400 shrink-0" />
@@ -91,7 +91,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-bark-700 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-spice-500">
-          <p>© 2024 SpiceWallah. All rights reserved.</p>
+          <p>© 2024 MacawSpice. All rights reserved.</p>
           <div className="flex gap-4">
             <a href="#" className="hover:text-spice-400 transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-spice-400 transition-colors">Terms of Service</a>

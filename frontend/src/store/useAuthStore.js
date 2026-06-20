@@ -9,7 +9,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error(
-    '[SpiceWallah] Missing Supabase env vars!\n' +
+    '[MacawSpice] Missing Supabase env vars!\n' +
     'Create frontend/.env with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
   );
 }
@@ -115,7 +115,7 @@ const useAuthStore = create(
       },
     }),
     {
-      name: 'spicewallah-auth',
+      name: 'macawspice-auth',
       partialize: (state) => ({ isAuthenticated: state.isAuthenticated, token: state.token }),
     }
   )

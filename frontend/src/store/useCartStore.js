@@ -66,7 +66,7 @@ const useCartStore = create(
       },
     }),
     {
-      name: 'spicewallah-cart',
+      name: 'macawspice-cart',
       partialize: (state) => ({ items: state.items }),
     }
   )

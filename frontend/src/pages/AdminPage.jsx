@@ -351,7 +351,7 @@ export default function AdminPage() {
             <div className="card p-3">
               <div className="px-3 py-2 mb-2">
                 <p className="font-display font-bold text-bark-900">Admin Panel</p>
-                <p className="text-xs text-bark-400">SpiceWallah</p>
+                <p className="text-xs text-bark-400">MacawSpice</p>
               </div>
               {navItems.map((item) => (
                 <Link

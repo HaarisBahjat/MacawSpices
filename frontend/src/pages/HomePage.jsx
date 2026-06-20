@@ -68,7 +68,7 @@ export default function HomePage() {
 
               <h1 className="font-display text-5xl lg:text-7xl font-bold leading-tight mb-6">
                 The Art of{' '}
-                <span className="text-spice-400">Authentic</span>
+                <span className="text-[#E7E1B1]">Authentic</span>
                 <br />Indian Spices
               </h1>
 

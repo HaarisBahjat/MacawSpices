@@ -68,7 +68,7 @@ export default function CheckoutPage() {
         key: data.keyId,
         amount: data.amount,
         currency: data.currency,
-        name: 'SpiceWallah',
+        name: 'MacawSpice',
         description: `Order of ${items.length} items`,
         order_id: data.orderId,
         prefill: {

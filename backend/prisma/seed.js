@@ -8,7 +8,7 @@ const spiceCategories = [
 ];
 
 async function main() {
-  console.log('🌶️  Seeding SpiceWallah database...');
+  console.log('🌶️  Seeding MacawSpice database...');
 
   // Seed categories
   const categories = {};

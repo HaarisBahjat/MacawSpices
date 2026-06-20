@@ -1,4 +1,4 @@
-# SpiceWallah
+# MacawSpice
 
 A full-stack premium spice e-commerce platform with custom blend mixing and Razorpay payment integration.
 
@@ -12,7 +12,7 @@ A full-stack premium spice e-commerce platform with custom blend mixing and Razo
 
 ## Project Structure
 ```
-spiceWallah/
+macawSpice/
 ├── backend/          Express API
 ├── frontend/         React + Vite app
 ```

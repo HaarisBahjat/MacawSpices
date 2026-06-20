@@ -64,7 +64,7 @@ export default function RegisterPage() {
             <div className="w-9 h-9 bg-chilli-600 rounded-xl flex items-center justify-center">
               <GiChiliPepper className="text-white text-xl" />
             </div>
-            <span className="font-display font-bold text-xl text-bark-900">Spice<span className="text-chilli-600">Wallah</span></span>
+            <span className="font-display font-bold text-xl text-bark-900">Macaw<span className="text-macaw-500">Spice</span></span>
           </Link>
 
           <h1 className="font-display text-3xl font-bold text-bark-900 mb-1">Create account</h1>
