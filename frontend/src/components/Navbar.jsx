@@ -42,7 +42,15 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      if (location.pathname.startsWith('/admin')) {
+        if (location.pathname.includes('/orders')) {
+          navigate(`/admin/orders?search=${encodeURIComponent(searchQuery)}`);
+        } else {
+          navigate(`/admin/products?search=${encodeURIComponent(searchQuery)}`);
+        }
+      } else {
+        navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      }
       setSearchOpen(false);
       setSearchQuery('');
     }

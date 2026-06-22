@@ -9,10 +9,9 @@ import useCartStore from '../store/useCartStore';
 import useAuthStore from '../store/useAuthStore';
 
 const QUANTITY_MULTIPLIERS = [
-  { label: '0.5x', value: 0.5 },
-  { label: '1x', value: 1 },
-  { label: '2x', value: 2 },
-  { label: '3x', value: 3 },
+  { label: '50g (1x)', value: 1 },
+  { label: '150g (3x)', value: 3 },
+  { label: '250g (5x)', value: 5 },
 ];
 
 export default function MixerPage() {
@@ -71,14 +70,17 @@ export default function MixerPage() {
     });
   };
 
-  const handleUpdateCustomItem = (productId, delta) => {
+  const handleSetCustomItemWeight = (productId, weight) => {
     setCustomItems(prev => prev.map(i => {
       if (i.product.id === productId) {
-        const newWeight = Math.max(0, i.weightGrams + delta);
-        return { ...i, weightGrams: newWeight };
+        return { ...i, weightGrams: weight };
       }
       return i;
-    }).filter(i => i.weightGrams > 0));
+    }));
+  };
+
+  const handleRemoveCustomItem = (productId) => {
+    setCustomItems(prev => prev.filter(i => i.product.id !== productId));
   };
 
   const totalWeight = computedItems.reduce((acc, i) => acc + i.adjustedWeight, 0);
@@ -310,10 +312,21 @@ export default function MixerPage() {
                                   </div>
                                   
                                   {isCustom && (
-                                    <div className="flex items-center gap-1 bg-white rounded-lg border border-spice-200 p-1 shrink-0">
-                                      <button onClick={() => handleUpdateCustomItem(item.product.id, -10)} className="w-6 h-6 rounded bg-spice-50 flex items-center justify-center text-bark-600 hover:bg-spice-200 transition-colors"><FiMinus className="text-xs" /></button>
-                                      <span className="text-sm font-semibold w-8 text-center">{item.adjustedWeight}g</span>
-                                      <button onClick={() => handleUpdateCustomItem(item.product.id, 10)} className="w-6 h-6 rounded bg-spice-50 flex items-center justify-center text-bark-600 hover:bg-spice-200 transition-colors"><FiPlus className="text-xs" /></button>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      {[50, 150, 250].map((w) => (
+                                        <button
+                                          key={w}
+                                          onClick={() => handleSetCustomItemWeight(item.product.id, w)}
+                                          className={`px-2 py-1 text-xs font-bold rounded transition-colors ${
+                                            item.adjustedWeight === w ? 'bg-chilli-600 text-white' : 'bg-spice-100 text-bark-600 hover:bg-spice-200'
+                                          }`}
+                                        >
+                                          {w}g
+                                        </button>
+                                      ))}
+                                      <button onClick={() => handleRemoveCustomItem(item.product.id)} className="ml-1 w-6 h-6 rounded bg-red-50 flex items-center justify-center text-red-600 hover:bg-red-100 transition-colors" title="Remove ingredient">
+                                        <FiMinus className="text-xs" />
+                                      </button>
                                     </div>
                                   )}
 

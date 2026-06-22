@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import useCartStore from '../store/useCartStore';
 import useWishlistStore from '../store/useWishlistStore';
 
-const DEFAULT_GRAMS = 100;
+const DEFAULT_GRAMS = 50;
 
 export default function ProductCard({ product }) {
   const { addItem } = useCartStore();
@@ -111,7 +111,7 @@ export default function ProductCard({ product }) {
           onChange={(e) => setSelectedWeight(Number(e.target.value))}
           className="bg-spice-50 text-bark-800 text-sm font-semibold rounded-xl px-2 py-2 outline-none cursor-pointer border border-spice-200 hover:border-chilli-300 transition-colors text-center xl:text-left"
         >
-          {[50, 100, 250, 500].map((w) => (
+          {[50, 150, 250].map((w) => (
             <option key={w} value={w}>{w}g</option>
           ))}
         </select>

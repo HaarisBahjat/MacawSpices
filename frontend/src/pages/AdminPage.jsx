@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPackage, FiTrendingUp, FiUsers, FiDollarSign, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
@@ -55,6 +55,8 @@ function AdminDashboard() {
 
 function AdminOrders() {
   const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const search = (searchParams.get('search') || '').toLowerCase();
   const [status, setStatus] = useState('');
 
   const { data } = useQuery({
@@ -67,7 +69,14 @@ function AdminOrders() {
     onSuccess: () => { qc.invalidateQueries(['admin-orders']); toast.success('Order updated'); },
   });
 
-  const orders = data?.data?.orders || [];
+  let orders = data?.data?.orders || [];
+  if (search) {
+    orders = orders.filter(o => 
+      o.id.toLowerCase().includes(search) || 
+      o.user?.name?.toLowerCase().includes(search) || 
+      o.user?.email?.toLowerCase().includes(search)
+    );
+  }
   const STATUSES = ['', 'PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
   return (
@@ -123,9 +132,19 @@ function AdminOrders() {
 
 function AdminProducts() {
   const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const search = (searchParams.get('search') || '').toLowerCase();
   const { data } = useQuery({ queryKey: ['admin-products'], queryFn: () => adminAPI.getProducts() });
   const { data: catData } = useQuery({ queryKey: ['categories'], queryFn: () => productAPI.getCategories() });
-  const products = data?.data?.products || [];
+  
+  let products = data?.data?.products || [];
+  if (search) {
+    products = products.filter(p => 
+      p.name.toLowerCase().includes(search) || 
+      p.description?.toLowerCase().includes(search) ||
+      p.category?.name?.toLowerCase().includes(search)
+    );
+  }
   const categories = catData?.data?.categories || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);

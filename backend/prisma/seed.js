@@ -10,6 +10,11 @@ const spiceCategories = [
 async function main() {
   console.log('🌶️  Seeding MacawSpice database...');
 
+  // Clean up existing data to remove arbitrary products
+  await prisma.blendItem.deleteMany({});
+  await prisma.blendTemplate.deleteMany({});
+  await prisma.product.deleteMany({});
+
   // Seed categories
   const categories = {};
   for (const cat of spiceCategories) {
@@ -22,120 +27,183 @@ async function main() {
     console.log(`✅ Category: ${cat.name}`);
   }
 
-  // Seed products
+  // Seed products from 13.pdf
   const products = [
     {
-      name: 'Kashmiri Red Chilli',
-      slug: 'kashmiri-red-chilli',
-      description: 'Vibrant red chilli from the valleys of Kashmir. Mild heat with beautiful color.',
+      name: 'Black Pepper (काली मिर्च)',
+      slug: 'black-pepper',
+      description: 'High quality black pepper, known as the King of Spices.',
       categoryId: categories['whole-spices'].id,
-      pricePerGram: 0.85,
-      stock: 5000,
+      pricePerGram: 0.75,
+      stock: 32000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=600'],
+      images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'],
       featured: true,
-      flavorProfile: 'Mild, Smoky, Rich Color',
-      origin: 'Kashmir, India',
+      flavorProfile: 'Sharp, Pungent, Bold',
+      origin: 'India',
     },
     {
-      name: 'Turmeric Powder',
-      slug: 'turmeric-powder',
-      description: 'Premium Lakadong turmeric from Meghalaya. High curcumin content.',
-      categoryId: categories['ground-spices'].id,
-      pricePerGram: 0.65,
-      stock: 8000,
-      minOrderGram: 100,
-      images: ['https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600'],
-      featured: true,
-      flavorProfile: 'Earthy, Warm, Slightly Bitter',
-      origin: 'Meghalaya, India',
-    },
-    {
-      name: 'Black Cardamom',
+      name: 'Black Cardamom (बड़ी इलाइची)',
       slug: 'black-cardamom',
-      description: 'Smoky, camphor-like large cardamom pods. Essential for biryanis and curries.',
+      description: 'Smoky, camphor-like large cardamom pods.',
       categoryId: categories['seeds-pods'].id,
       pricePerGram: 1.20,
-      stock: 3000,
+      stock: 24000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=600'],
+      featured: true,
+      flavorProfile: 'Smoky, Intense',
+      origin: 'India',
+    },
+    {
+      name: 'Caraway Seeds (शाह जीरा)',
+      slug: 'caraway-seeds',
+      description: 'Highly aromatic caraway seeds.',
+      categoryId: categories['whole-spices'].id,
+      pricePerGram: 0.80,
+      stock: 24000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600'],
+      featured: false,
+      flavorProfile: 'Earthy, Nutty',
+      origin: 'India',
+    },
+    {
+      name: 'Cinnamon Sticks (दालचीनी)',
+      slug: 'cinnamon-sticks',
+      description: 'Sweet and warm cinnamon sticks.',
+      categoryId: categories['whole-spices'].id,
+      pricePerGram: 0.90,
+      stock: 20000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600'],
+      featured: false,
+      flavorProfile: 'Sweet, Warm',
+      origin: 'India',
+    },
+    {
+      name: 'Bay Leaves (तेज पत्ता)',
+      slug: 'bay-leaves',
+      description: 'Aromatic bay leaves for curries and rice.',
+      categoryId: categories['whole-spices'].id,
+      pricePerGram: 0.50,
+      stock: 16000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600'],
+      featured: false,
+      flavorProfile: 'Herbal, Floral',
+      origin: 'India',
+    },
+    {
+      name: 'Star Anise (चक्र फूल)',
+      slug: 'star-anise',
+      description: 'Beautiful and licorice-flavored star anise.',
+      categoryId: categories['whole-spices'].id,
+      pricePerGram: 1.50,
+      stock: 16000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'],
+      featured: true,
+      flavorProfile: 'Licorice, Sweet',
+      origin: 'India',
+    },
+    {
+      name: 'Green Cardamom (छोटी इलाइची)',
+      slug: 'green-cardamom',
+      description: 'Aromatic elaichi pods.',
+      categoryId: categories['seeds-pods'].id,
+      pricePerGram: 2.50,
+      stock: 16000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600'],
+      featured: true,
+      flavorProfile: 'Floral, Sweet',
+      origin: 'India',
+    },
+    {
+      name: 'Cloves (लौंग)',
+      slug: 'cloves',
+      description: 'Strong, pungent, and sweet cloves.',
+      categoryId: categories['whole-spices'].id,
+      pricePerGram: 1.80,
+      stock: 12000,
       minOrderGram: 50,
       images: ['https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=600'],
       featured: false,
-      flavorProfile: 'Smoky, Camphor, Intense',
-      origin: 'Himachal Pradesh, India',
+      flavorProfile: 'Pungent, Sweet',
+      origin: 'India',
     },
     {
-      name: 'Coriander Seeds',
-      slug: 'coriander-seeds',
-      description: 'Fresh, citrusy coriander seeds. Base of most Indian spice mixes.',
+      name: 'Mace (जावित्री)',
+      slug: 'mace',
+      description: 'Delicate and sweet mace.',
       categoryId: categories['whole-spices'].id,
-      pricePerGram: 0.35,
-      stock: 10000,
-      minOrderGram: 100,
-      images: ['https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600'],
+      pricePerGram: 3.00,
+      stock: 12000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=600'],
       featured: false,
-      flavorProfile: 'Citrusy, Nutty, Mild',
-      origin: 'Rajasthan, India',
+      flavorProfile: 'Sweet, Spicy',
+      origin: 'India',
     },
     {
-      name: 'Cumin Seeds',
-      slug: 'cumin-seeds',
-      description: 'Earthy jeera from Rajasthan. Perfect for tempering and spice blends.',
+      name: 'Stone Flower (दगड़ फूल)',
+      slug: 'stone-flower',
+      description: 'Unique earthy spice for authentic curries.',
       categoryId: categories['whole-spices'].id,
-      pricePerGram: 0.45,
-      stock: 9000,
+      pricePerGram: 2.00,
+      stock: 12000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1606946887360-f5e9b59acdb2?w=600'],
-      featured: true,
-      flavorProfile: 'Earthy, Warm, Nutty',
-      origin: 'Rajasthan, India',
+      images: ['https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600'],
+      featured: false,
+      flavorProfile: 'Earthy, Woody',
+      origin: 'India',
     },
     {
-      name: 'Green Cardamom',
-      slug: 'green-cardamom',
-      description: 'Aromatic elaichi pods. Queen of spices, perfect for chai and desserts.',
-      categoryId: categories['seeds-pods'].id,
-      pricePerGram: 2.50,
-      stock: 2000,
-      minOrderGram: 25,
-      images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600'],
-      featured: true,
-      flavorProfile: 'Floral, Sweet, Aromatic',
-      origin: 'Kerala, India',
-    },
-    {
-      name: 'Garam Masala',
-      slug: 'garam-masala',
-      description: 'Our signature house blend of warming spices. Pre-ground and ready to use.',
-      categoryId: categories['spice-blends'].id,
-      pricePerGram: 0.90,
-      stock: 4000,
-      minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600'],
-      featured: true,
-      flavorProfile: 'Warm, Complex, Aromatic',
-      origin: 'North India',
-    },
-    {
-      name: 'Black Pepper',
-      slug: 'black-pepper',
-      description: 'Malabar black pepper, the King of Spices. Bold heat and complex aroma.',
+      name: 'White Pepper (सफ़ेद मिर्च)',
+      slug: 'white-pepper',
+      description: 'Mild and earthy white pepper.',
       categoryId: categories['whole-spices'].id,
-      pricePerGram: 0.75,
-      stock: 7000,
+      pricePerGram: 1.00,
+      stock: 8000,
       minOrderGram: 50,
       images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'],
       featured: false,
-      flavorProfile: 'Sharp, Pungent, Bold',
-      origin: 'Kerala, India',
+      flavorProfile: 'Mild, Earthy',
+      origin: 'India',
+    },
+    {
+      name: 'Nutmeg (जायफल)',
+      slug: 'nutmeg',
+      description: 'Warm and sweet nutmeg.',
+      categoryId: categories['whole-spices'].id,
+      pricePerGram: 2.20,
+      stock: 6000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600'],
+      featured: false,
+      flavorProfile: 'Warm, Sweet',
+      origin: 'India',
+    },
+    {
+      name: 'Cubeb Pepper (कबाब चीनी)',
+      slug: 'cubeb-pepper',
+      description: 'Aromatic and slightly bitter cubeb pepper.',
+      categoryId: categories['whole-spices'].id,
+      pricePerGram: 1.50,
+      stock: 2000,
+      minOrderGram: 50,
+      images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600'],
+      featured: false,
+      flavorProfile: 'Peppery, Bitter',
+      origin: 'India',
     },
   ];
 
   const createdProducts = {};
   for (const product of products) {
-    const created = await prisma.product.upsert({
-      where: { slug: product.slug },
-      update: {},
-      create: product,
+    const created = await prisma.product.create({
+      data: product,
     });
     createdProducts[product.slug] = created;
     console.log(`✅ Product: ${product.name}`);
@@ -144,91 +212,43 @@ async function main() {
   // Seed blend templates
   const blendTemplates = [
     {
-      name: 'Classic Garam Masala',
-      slug: 'classic-garam-masala',
-      description: 'The timeless North Indian warming blend. Perfect for curries and gravies.',
+      name: 'MACAW Blend (50g)',
+      slug: 'macaw-blend-50g',
+      description: 'The signature MACAW blend with 13 premium spices.',
       imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600',
-      tags: ['popular', 'north-indian', 'everyday'],
+      tags: ['macaw', 'signature', 'premium'],
       items: [
-        { slug: 'coriander-seeds', weightGrams: 100 },
-        { slug: 'cumin-seeds', weightGrams: 50 },
-        { slug: 'black-pepper', weightGrams: 30 },
-        { slug: 'black-cardamom', weightGrams: 20 },
-        { slug: 'green-cardamom', weightGrams: 10 },
+        { slug: 'black-pepper', weightGrams: 8 },
+        { slug: 'black-cardamom', weightGrams: 6 },
+        { slug: 'caraway-seeds', weightGrams: 6 },
+        { slug: 'cinnamon-sticks', weightGrams: 5 },
+        { slug: 'bay-leaves', weightGrams: 4 },
+        { slug: 'star-anise', weightGrams: 4 },
+        { slug: 'green-cardamom', weightGrams: 4 },
+        { slug: 'cloves', weightGrams: 3 },
+        { slug: 'mace', weightGrams: 3 },
+        { slug: 'stone-flower', weightGrams: 3 },
+        { slug: 'white-pepper', weightGrams: 2 },
+        { slug: 'nutmeg', weightGrams: 1.5 },
+        { slug: 'cubeb-pepper', weightGrams: 0.5 },
       ]
-    },
-    {
-      name: 'Kerala Spice Blend',
-      slug: 'kerala-spice-blend',
-      description: 'Aromatic blend from God\'s Own Country. Rich with cardamom and pepper.',
-      imageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600',
-      tags: ['south-indian', 'aromatic', 'premium'],
-      items: [
-        { slug: 'green-cardamom', weightGrams: 30 },
-        { slug: 'black-pepper', weightGrams: 50 },
-        { slug: 'coriander-seeds', weightGrams: 70 },
-        { slug: 'cumin-seeds', weightGrams: 30 },
-      ]
-    },
-    {
-      name: 'Biryani Masala',
-      slug: 'biryani-masala',
-      description: 'The royal blend for the king of dishes. Fragrant, layered, and complex.',
-      imageUrl: 'https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600',
-      tags: ['biryani', 'special-occasion', 'premium'],
-      items: [
-        { slug: 'black-cardamom', weightGrams: 30 },
-        { slug: 'green-cardamom', weightGrams: 15 },
-        { slug: 'black-pepper', weightGrams: 20 },
-        { slug: 'coriander-seeds', weightGrams: 60 },
-        { slug: 'cumin-seeds', weightGrams: 40 },
-        { slug: 'kashmiri-red-chilli', weightGrams: 25 },
-      ]
-    },
-    {
-      name: 'Golden Turmeric Mix',
-      slug: 'golden-turmeric-mix',
-      description: 'The perfect immunity-boosting blend for Golden Milk or Haldi Doodh.',
-      imageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600',
-      tags: ['immunity', 'health', 'beverage'],
-      items: [
-        { slug: 'turmeric-powder', weightGrams: 100 },
-        { slug: 'black-pepper', weightGrams: 15 },
-        { slug: 'green-cardamom', weightGrams: 20 },
-      ]
-    },
-    {
-      name: 'Everyday Curry Powder',
-      slug: 'everyday-curry-powder',
-      description: 'A versatile, well-balanced base for your daily dal and sabzi.',
-      imageUrl: 'https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600',
-      tags: ['everyday', 'essential', 'mild'],
-      items: [
-        { slug: 'coriander-seeds', weightGrams: 80 },
-        { slug: 'cumin-seeds', weightGrams: 40 },
-        { slug: 'turmeric-powder', weightGrams: 30 },
-        { slug: 'kashmiri-red-chilli', weightGrams: 20 },
-      ]
-    },
+    }
   ];
 
   for (const template of blendTemplates) {
     const { items, ...data } = template;
-    const existing = await prisma.blendTemplate.findUnique({ where: { slug: data.slug } });
-    if (!existing) {
-      const created = await prisma.blendTemplate.create({
-        data: {
-          ...data,
-          items: {
-            create: items.map((i) => ({
-              productId: createdProducts[i.slug].id,
-              weightGrams: i.weightGrams,
-            }))
-          }
+    const created = await prisma.blendTemplate.create({
+      data: {
+        ...data,
+        items: {
+          create: items.map((i) => ({
+            productId: createdProducts[i.slug].id,
+            weightGrams: i.weightGrams,
+          }))
         }
-      });
-      console.log(`✅ Blend Template: ${created.name}`);
-    }
+      }
+    });
+    console.log(`✅ Blend Template: ${created.name}`);
   }
 
   console.log('\n🎉 Seed complete!');

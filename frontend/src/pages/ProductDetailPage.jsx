@@ -10,7 +10,7 @@ export default function ProductDetailPage() {
   const { slug } = useParams();
   const { addItem } = useCartStore();
   const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(100);
+  const [quantity, setQuantity] = useState(50);
   const [activeTab, setActiveTab] = useState('description');
 
   const { data, isLoading, error } = useQuery({
@@ -123,31 +123,14 @@ export default function ProductDetailPage() {
             <div className="mb-6">
               <label className="label">Select Quantity (grams)</label>
               <div className="flex items-center gap-4">
-                <div className="flex items-center border-2 border-spice-200 rounded-xl overflow-hidden">
-                  <button
-                    id="qty-decrease"
-                    onClick={() => setQuantity(Math.max(product.minOrderGram, quantity - 50))}
-                    className="px-4 py-3 bg-white hover:bg-spice-50 transition-colors text-bark-700"
-                  >
-                    <FiMinus />
-                  </button>
-                  <span className="px-6 py-3 font-bold text-bark-900 bg-white min-w-[80px] text-center">{quantity}g</span>
-                  <button
-                    id="qty-increase"
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 50))}
-                    className="px-4 py-3 bg-white hover:bg-spice-50 transition-colors text-bark-700"
-                  >
-                    <FiPlus />
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  {[100, 250, 500].map((g) => (
+                <div className="flex gap-3 w-full">
+                  {[50, 150, 250].map((g) => (
                     <button
                       key={g}
                       id={`qty-preset-${g}`}
                       onClick={() => setQuantity(g)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
-                        quantity === g ? 'bg-chilli-600 text-white border-chilli-600' : 'bg-white text-bark-600 border-spice-200 hover:border-chilli-300'
+                      className={`flex-1 py-3 rounded-xl text-sm font-bold border-2 transition-all ${
+                        quantity === g ? 'bg-chilli-600 text-white border-chilli-600' : 'bg-white text-bark-700 border-spice-200 hover:border-chilli-300'
                       }`}
                     >
                       {g}g
