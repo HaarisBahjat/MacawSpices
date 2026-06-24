@@ -27,6 +27,7 @@ const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const WishlistPage = lazy(() => import('./pages/WishlistPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
+const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 5 * 60 * 1000, retry: 1 } }
@@ -48,15 +49,19 @@ function App() {
   const { initAuth, isAuthenticated } = useAuthStore();
   const { fetchCart } = useCartStore();
 
+  // Initialize Supabase session on mount
   useEffect(() => {
     initAuth();
   }, []);
 
+  // Fetch cart whenever user is/becomes authenticated
+  // We also run on mount if isAuthenticated is already true (from persisted store)
   useEffect(() => {
     if (isAuthenticated) {
       fetchCart();
     }
   }, [isAuthenticated]);
+
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -79,6 +84,7 @@ function App() {
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
                 <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+                <Route path="/order-success" element={<ProtectedRoute><OrderSuccessPage /></ProtectedRoute>} />
                 <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
                 <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -65,6 +65,15 @@ router.post('/verify', authenticate, asyncHandler(async (req, res) => {
       razorpaySignature: razorpay_signature,
       isPaid: true,
       status: 'CONFIRMED',
+    },
+    include: {
+      items: {
+        include: {
+          product: { select: { name: true, slug: true, images: true } }
+        }
+      },
+      address: true,
+      user: { select: { name: true, email: true } }
     }
   });
 

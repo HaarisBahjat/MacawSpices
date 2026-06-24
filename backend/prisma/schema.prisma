@@ -134,6 +134,10 @@ model Order {
   razorpaySignature   String?
   isPaid              Boolean     @default(false)
   notes               String?
+  trackingNumber      String?     // courier tracking ID
+  courierName         String?     // e.g. "Delhivery", "Blue Dart"
+  shippedAt           DateTime?   // when order was marked SHIPPED
+  deliveredAt         DateTime?   // when order was marked DELIVERED
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 

@@ -10,12 +10,14 @@ const useCartStore = create(
       subtotal: 0,
       isLoading: false,
 
+      // ── Core: fetch cart from server (enriches items with product data) ──
       fetchCart: async () => {
         try {
           const { data } = await cartAPI.get();
           set({ items: data.cart.items || [], subtotal: data.cart.subtotal || 0 });
         } catch (err) {
-          // Not logged in - local cart only
+          // Not logged in — keep local state, but clear stale product data
+          // so we don't show wrong prices
         }
       },
 
@@ -23,7 +25,7 @@ const useCartStore = create(
         set({ isLoading: true });
         try {
           await cartAPI.add(item);
-          await get().fetchCart();
+          await get().fetchCart();     // always re-fetch so product data is fresh
           set({ isLoading: false });
           toast.success('Added to cart!', {
             icon: '🌶️',
@@ -57,8 +59,9 @@ const useCartStore = create(
       clearCart: async () => {
         try {
           await cartAPI.clear();
-          set({ items: [], subtotal: 0 });
         } catch {}
+        // Always clear local state even if server call fails
+        set({ items: [], subtotal: 0 });
       },
 
       get totalItems() {
@@ -67,7 +70,10 @@ const useCartStore = create(
     }),
     {
       name: 'macawspice-cart',
-      partialize: (state) => ({ items: state.items }),
+      // ⚠️  Do NOT persist items — they contain stale product data.
+      // Cart is always re-fetched from server on login/mount.
+      // We only persist nothing (or a minimal flag) to keep zustand happy.
+      partialize: () => ({}),
     }
   )
 );

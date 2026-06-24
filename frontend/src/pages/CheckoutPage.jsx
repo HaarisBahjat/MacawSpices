@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { FiCheck, FiMapPin, FiCreditCard, FiPlus } from 'react-icons/fi';
+import { FiCheck, FiMapPin, FiCreditCard, FiPlus, FiShoppingCart } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { authAPI, paymentAPI, orderAPI } from '../services/api';
 import useCartStore from '../store/useCartStore';
@@ -11,12 +11,18 @@ const STEPS = ['Address', 'Review', 'Payment'];
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, clearCart } = useCartStore();
+  const { items, subtotal, clearCart, fetchCart, isLoading: cartLoading } = useCartStore();
   const [step, setStep] = useState(0);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [newAddress, setNewAddress] = useState({ label: 'Home', line1: '', line2: '', city: '', state: '', pincode: '' });
   const [showNewAddr, setShowNewAddr] = useState(false);
+  const [cartReady, setCartReady] = useState(false);
+
+  // Ensure cart is always loaded with fresh product data on checkout mount
+  useEffect(() => {
+    fetchCart().then(() => setCartReady(true));
+  }, []);
 
   const { data: profileData, refetch } = useQuery({
     queryKey: ['my-profile'],
@@ -27,6 +33,32 @@ export default function CheckoutPage() {
   const addresses = profile?.addresses || [];
   const shipping = subtotal >= 499 ? 0 : 60;
   const total = subtotal + shipping;
+
+  // Guard: redirect to cart if cart is empty after it's done loading
+  if (cartReady && items.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-20 h-20 bg-spice-100 rounded-full flex items-center justify-center mx-auto mb-5">
+          <FiShoppingCart className="text-3xl text-spice-400" />
+        </div>
+        <h2 className="font-display text-2xl font-bold text-bark-900 mb-2">Your cart is empty</h2>
+        <p className="text-bark-500 mb-6">Add items to your cart before checking out.</p>
+        <Link to="/products" className="btn-primary">Browse Products</Link>
+      </div>
+    );
+  }
+
+  // Guard: show loading while cart is being fetched
+  if (!cartReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-3" />
+          <p className="text-bark-500 text-sm">Loading your cart...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddAddress = async () => {
     try {
@@ -39,7 +71,20 @@ export default function CheckoutPage() {
     }
   };
 
+  // Load Razorpay script only once — if already loaded, resolve immediately
   const loadRazorpay = () => new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    // Check if a script tag for Razorpay is already in the DOM
+    const existing = document.querySelector('script[src*="razorpay"]');
+    if (existing) {
+      // Wait for it to finish loading
+      existing.addEventListener('load', () => resolve(true));
+      existing.addEventListener('error', () => resolve(false));
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.onload = () => resolve(true);
@@ -57,6 +102,13 @@ export default function CheckoutPage() {
       const loaded = await loadRazorpay();
       if (!loaded) {
         toast.error('Failed to load payment gateway. Check your internet connection.');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Validate total
+      if (!total || total < 1) {
+        toast.error('Cart total is invalid. Please refresh and try again.');
         setIsProcessing(false);
         return;
       }
@@ -96,8 +148,8 @@ export default function CheckoutPage() {
               razorpayOrderId: data.orderId,
             });
 
-            // Verify payment
-            await paymentAPI.verify({
+            // Verify payment — response contains full order data
+            const verifyRes = await paymentAPI.verify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -106,9 +158,15 @@ export default function CheckoutPage() {
 
             await clearCart();
             toast.success('Payment successful! Order placed 🎉');
-            navigate(`/orders/${orderRes.data.order.id}`);
-          } catch {
+            setIsProcessing(false);
+            // Navigate to success page, passing full order data via state
+            const confirmedOrder = verifyRes?.data?.order || orderRes.data.order;
+            navigate('/order-success', { state: { order: confirmedOrder }, replace: true });
+
+          } catch (handlerErr) {
+            console.error('❌ Payment handler error:', handlerErr);
             toast.error('Payment verification failed. Contact support.');
+            setIsProcessing(false);  // ← must reset so user can retry
           }
         },
         modal: { ondismiss: () => setIsProcessing(false) },
@@ -117,7 +175,9 @@ export default function CheckoutPage() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
-      toast.error('Failed to initiate payment');
+      console.error('❌ Payment initiation error:', err?.response?.data || err?.message || err);
+      const msg = err?.response?.data?.error || 'Failed to initiate payment. Try again.';
+      toast.error(msg);
       setIsProcessing(false);
     }
   };

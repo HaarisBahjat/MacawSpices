@@ -30,33 +30,7 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json({ blends: blendsWithPrice });
 }));
 
-// GET /api/blends/:id - single blend template
-router.get('/:id', asyncHandler(async (req, res) => {
-  const blend = await prisma.blendTemplate.findUnique({
-    where: { id: req.params.id },
-    include: {
-      items: {
-        include: {
-          product: {
-            select: {
-              id: true, name: true, slug: true, pricePerGram: true,
-              images: true, flavorProfile: true, origin: true
-            }
-          }
-        }
-      }
-    }
-  });
-  if (!blend) return res.status(404).json({ error: 'Blend not found' });
-
-  const totalWeight = blend.items.reduce((acc, i) => acc + i.weightGrams, 0);
-  const estimatedPrice = blend.items.reduce(
-    (acc, i) => acc + i.weightGrams * i.product.pricePerGram,
-    0
-  );
-
-  res.json({ blend: { ...blend, totalWeight, estimatedPrice } });
-}));
+// ⚠️ IMPORTANT: Specific routes MUST come BEFORE /:id or they get swallowed
 
 // POST /api/blends/price-estimate - calculate blend price
 router.post('/price-estimate', asyncHandler(async (req, res) => {
@@ -98,7 +72,8 @@ router.post('/save', authenticate, asyncHandler(async (req, res) => {
   res.status(201).json({ saved });
 }));
 
-// GET /api/blends/mine - user's saved blends
+// GET /api/blends/user/mine - user's saved blends
+// ⚠️ Must be BEFORE /:id route
 router.get('/user/mine', authenticate, asyncHandler(async (req, res) => {
   const saved = await prisma.savedBlend.findMany({
     where: { userId: req.user.id },
@@ -122,6 +97,35 @@ router.delete('/save/:id', authenticate, asyncHandler(async (req, res) => {
     where: { id: req.params.id, userId: req.user.id }
   });
   res.json({ message: 'Blend removed from saved' });
+}));
+
+// GET /api/blends/:id - single blend template
+// ⚠️ Must come AFTER all specific routes above
+router.get('/:id', asyncHandler(async (req, res) => {
+  const blend = await prisma.blendTemplate.findUnique({
+    where: { id: req.params.id },
+    include: {
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true, name: true, slug: true, pricePerGram: true,
+              images: true, flavorProfile: true, origin: true
+            }
+          }
+        }
+      }
+    }
+  });
+  if (!blend) return res.status(404).json({ error: 'Blend not found' });
+
+  const totalWeight = blend.items.reduce((acc, i) => acc + i.weightGrams, 0);
+  const estimatedPrice = blend.items.reduce(
+    (acc, i) => acc + i.weightGrams * i.product.pricePerGram,
+    0
+  );
+
+  res.json({ blend: { ...blend, totalWeight, estimatedPrice } });
 }));
 
 module.exports = router;

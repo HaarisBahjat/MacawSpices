@@ -76,7 +76,9 @@ export const adminAPI = {
   updateProduct: (id, data) => api.put(`/admin/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
   getOrders: (params) => api.get('/admin/orders', { params }),
-  updateOrderStatus: (id, status) => api.put(`/admin/orders/${id}/status`, { status }),
+  updateOrderStatus: (id, status, trackingNumber, courierName) =>
+    api.put(`/admin/orders/${id}/status`, { status, trackingNumber, courierName }),
+
   createBlend: (data) => api.post('/admin/blends', data),
   createCategory: (data) => api.post('/admin/categories', data),
 };

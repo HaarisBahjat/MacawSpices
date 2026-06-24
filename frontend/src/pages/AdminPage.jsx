@@ -58,6 +58,10 @@ function AdminOrders() {
   const [searchParams] = useSearchParams();
   const search = (searchParams.get('search') || '').toLowerCase();
   const [status, setStatus] = useState('');
+  // Tracking modal state
+  const [trackingModal, setTrackingModal] = useState(null); // { orderId, status }
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [courierName, setCourierName] = useState('Delhivery');
 
   const { data } = useQuery({
     queryKey: ['admin-orders', status],
@@ -65,15 +69,31 @@ function AdminOrders() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }) => adminAPI.updateOrderStatus(id, status),
-    onSuccess: () => { qc.invalidateQueries(['admin-orders']); toast.success('Order updated'); },
+    mutationFn: ({ id, status, trackingNumber, courierName }) =>
+      adminAPI.updateOrderStatus(id, status, trackingNumber, courierName),
+    onSuccess: () => {
+      qc.invalidateQueries(['admin-orders']);
+      toast.success('Order updated ✅');
+      setTrackingModal(null);
+      setTrackingNumber('');
+    },
+    onError: (err) => toast.error(err?.response?.data?.error || 'Update failed'),
   });
+
+  const handleStatusChange = (order, newStatus) => {
+    if (newStatus === 'SHIPPED') {
+      // Open tracking modal before updating
+      setTrackingModal({ orderId: order.id, status: newStatus });
+    } else {
+      updateMutation.mutate({ id: order.id, status: newStatus });
+    }
+  };
 
   let orders = data?.data?.orders || [];
   if (search) {
-    orders = orders.filter(o => 
-      o.id.toLowerCase().includes(search) || 
-      o.user?.name?.toLowerCase().includes(search) || 
+    orders = orders.filter(o =>
+      o.id.toLowerCase().includes(search) ||
+      o.user?.name?.toLowerCase().includes(search) ||
       o.user?.email?.toLowerCase().includes(search)
     );
   }
@@ -81,6 +101,63 @@ function AdminOrders() {
 
   return (
     <div>
+      {/* Tracking Number Modal */}
+      {trackingModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h3 className="font-display text-xl font-bold text-bark-900 mb-4">📦 Mark as Shipped</h3>
+            <p className="text-sm text-bark-500 mb-4">Add tracking details so the customer can track their package.</p>
+            <div className="space-y-3">
+              <div>
+                <label className="label">Courier Name</label>
+                <select
+                  className="input"
+                  value={courierName}
+                  onChange={(e) => setCourierName(e.target.value)}
+                >
+                  <option>Delhivery</option>
+                  <option>Blue Dart</option>
+                  <option>DTDC</option>
+                  <option>Ekart</option>
+                  <option>India Post</option>
+                  <option>Xpressbees</option>
+                  <option>Shadowfax</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Tracking Number <span className="text-bark-400 font-normal">(optional)</span></label>
+                <input
+                  className="input"
+                  placeholder="e.g. DEL1234567890"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() =>
+                  updateMutation.mutate({
+                    id: trackingModal.orderId,
+                    status: trackingModal.status,
+                    trackingNumber: trackingNumber || undefined,
+                    courierName: courierName,
+                  })
+                }
+                disabled={updateMutation.isPending}
+                className="btn-primary flex-1"
+              >
+                {updateMutation.isPending ? 'Saving...' : '🚚 Mark Shipped'}
+              </button>
+              <button onClick={() => setTrackingModal(null)} className="btn-ghost flex-1">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-bark-900">Orders</h2>
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="input py-2 text-sm w-auto">
@@ -101,21 +178,29 @@ function AdminOrders() {
           <tbody className="divide-y divide-spice-100">
             {orders.map((order) => (
               <tr key={order.id} className="hover:bg-spice-50">
-                <td className="px-5 py-3 font-mono text-xs text-bark-600">#{order.id.slice(-8).toUpperCase()}</td>
+                <td className="px-5 py-3">
+                  <p className="font-mono text-xs text-bark-600">#{order.id.slice(-8).toUpperCase()}</p>
+                  {order.trackingNumber && (
+                    <p className="text-xs text-orange-600 mt-0.5">🚚 {order.trackingNumber}</p>
+                  )}
+                </td>
                 <td className="px-5 py-3">
                   <p className="font-medium text-bark-900">{order.user?.name}</p>
                   <p className="text-xs text-bark-400">{order.user?.email}</p>
                 </td>
                 <td className="px-5 py-3 font-semibold text-bark-900">₹{order.totalAmount.toFixed(0)}</td>
                 <td className="px-5 py-3">
-                  <span className={`badge text-xs ${order.status === 'DELIVERED' ? 'badge-green' : order.status === 'CANCELLED' ? 'badge-red' : 'badge-gold'}`}>
+                  <span className={`badge text-xs ${
+                    order.status === 'DELIVERED' ? 'badge-green' :
+                    order.status === 'CANCELLED' ? 'badge-red' : 'badge-gold'
+                  }`}>
                     {order.status}
                   </span>
                 </td>
                 <td className="px-5 py-3">
                   <select
                     value={order.status}
-                    onChange={(e) => updateMutation.mutate({ id: order.id, status: e.target.value })}
+                    onChange={(e) => handleStatusChange(order, e.target.value)}
                     className="text-xs border border-spice-200 rounded-lg px-2 py-1"
                   >
                     {STATUSES.filter(Boolean).map((s) => <option key={s} value={s}>{s}</option>)}

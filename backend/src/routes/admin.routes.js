@@ -104,10 +104,28 @@ router.get('/orders', asyncHandler(async (req, res) => {
 
 // PUT /api/admin/orders/:id/status
 router.put('/orders/:id/status', asyncHandler(async (req, res) => {
-  const { status } = req.body;
+  const { status, trackingNumber, courierName } = req.body;
+
+  const updateData = { status };
+
+  // Auto-set timestamps when status changes
+  if (status === 'SHIPPED') {
+    updateData.shippedAt = new Date();
+    if (trackingNumber) updateData.trackingNumber = trackingNumber;
+    if (courierName) updateData.courierName = courierName;
+  }
+  if (status === 'DELIVERED') {
+    updateData.deliveredAt = new Date();
+  }
+
   const order = await prisma.order.update({
     where: { id: req.params.id },
-    data: { status }
+    data: updateData,
+    include: {
+      user: { select: { name: true, email: true } },
+      address: true,
+      items: { include: { product: { select: { name: true } } } }
+    }
   });
   res.json({ order });
 }));

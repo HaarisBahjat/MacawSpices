@@ -116,7 +116,12 @@ const useAuthStore = create(
     }),
     {
       name: 'macawspice-auth',
-      partialize: (state) => ({ isAuthenticated: state.isAuthenticated, token: state.token }),
+      // Also persist `user` so name/role shows immediately on reload
+      partialize: (state) => ({
+        isAuthenticated: state.isAuthenticated,
+        token: state.token,
+        user: state.user,
+      }),
     }
   )
 );
