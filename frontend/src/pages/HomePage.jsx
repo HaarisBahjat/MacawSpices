@@ -1,36 +1,88 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { FiArrowRight, FiStar, FiPackage, FiShield, FiTruck } from 'react-icons/fi';
-import { GiSpoon, GiMortar } from 'react-icons/gi';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { productAPI, blendAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
+import ScaleReveal from '../components/ScaleReveal';
 
-const features = [
-  { icon: <GiMortar className="text-2xl" />, title: 'Custom Mixing', desc: 'Create your perfect spice blend from our preset templates' },
-  { icon: <FiShield className="text-2xl" />, title: '100% Authentic', desc: 'Directly sourced from farms across India' },
-  { icon: <FiTruck className="text-2xl" />, title: 'Fast Delivery', desc: 'Pan-India delivery in 3-5 business days' },
-  { icon: <FiPackage className="text-2xl" />, title: 'Fresh Sealed', desc: 'Vacuum-sealed to preserve freshness and aroma' },
+// ── Reveal hook (Zepmeusel-style clip-path reveal on scroll) ──────────────
+function useReveal() {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.querySelectorAll('.reveal-text').forEach((el) => {
+              el.classList.add('revealed');
+            });
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
+}
+
+// ── Marquee Strip ────────────────────────────────────────────────────────
+const MARQUEE_ITEMS = [
+  'Single Origin', '✦', 'Direct Trade', '✦', 'Apothecary Milled',
+  '✦', 'Lab Verified', '✦', 'Zero Adulteration', '✦',
+  'Single Origin', '✦', 'Direct Trade', '✦', 'Apothecary Milled',
+  '✦', 'Lab Verified', '✦', 'Zero Adulteration', '✦',
 ];
 
-const testimonials = [
-  { name: 'Priya Sharma', location: 'Mumbai', text: 'The Kashmiri chilli is absolutely stunning. The color it gives to dishes is unreal!', rating: 5 },
-  { name: 'Rahul Verma', location: 'Delhi', text: 'Ordered the Biryani masala blend and my family couldn\'t believe I made it at home.', rating: 5 },
-  { name: 'Anjali Nair', location: 'Bangalore', text: 'Best quality turmeric I\'ve ever used. You can smell the difference immediately.', rating: 5 },
-];
+function MarqueeStrip({ reverse = false }) {
+  return (
+    <div className="overflow-hidden py-4 bg-primary text-on-primary select-none" aria-hidden>
+      <div className={`marquee-track ${reverse ? '[animation-direction:reverse]' : ''}`}>
+        {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+          <span key={i} className="text-xs font-bold uppercase tracking-[0.2em] px-6 opacity-90">
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } }
-};
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-};
+// ── Parallax image wrapper ───────────────────────────────────────────────
+function ParallaxImage({ src, alt, className }) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const y = useTransform(scrollYProgress, [0, 1], ['-8%', '8%']);
+  return (
+    <div ref={ref} className="overflow-hidden h-full w-full">
+      <motion.img
+        src={src} alt={alt} loading="lazy"
+        style={{ y, scale: 1.16 }}
+        className={className}
+      />
+    </div>
+  );
+}
 
 export default function HomePage() {
-  const { data: productsData } = useQuery({
+  const heroRef = useRef(null);
+  const featuredRef = useReveal();
+  const bentoRef = useReveal();
+  const mixerRef = useReveal();
+
+  const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroImgY = useTransform(heroScroll, [0, 1], ['0%', '20%']);
+
+  const bannerRef = useRef(null);
+  const { scrollYProgress: bannerScroll } = useScroll({ target: bannerRef, offset: ['start end', 'end start'] });
+  const bannerOpacity = useTransform(bannerScroll, [0, 0.22, 0.78, 1], [0, 1, 1, 0]);
+  const bannerTextY = useTransform(bannerScroll, [0, 0.22, 0.78, 1], [36, 0, 0, -36]);
+
+  const { data: productsData, isLoading: isProductsLoading } = useQuery({
     queryKey: ['featured-products'],
     queryFn: () => productAPI.getAll({ featured: 'true', limit: 4 })
   });
@@ -41,261 +93,382 @@ export default function HomePage() {
   });
 
   const featuredProducts = productsData?.data?.products || [];
-  const blends = blendsData?.data?.blends?.slice(0, 3) || [];
+  const blends = blendsData?.data?.blends?.slice(0, 2) || [];
 
   return (
-    <div className="overflow-x-hidden">
-      {/* =================== HERO =================== */}
-      <section className="relative min-h-[90vh] flex items-center bg-spice-gradient overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-hero-pattern opacity-30" />
-        
-        {/* Floating spice circles */}
-        <div className="absolute top-20 right-20 w-64 h-64 bg-chilli-600/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 left-10 w-48 h-48 bg-spice-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute top-1/2 right-1/3 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
+    <div className="overflow-x-hidden font-sans bg-surface text-on-surface">
 
-        <div className="section relative z-10 py-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
-            <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7 }}
-              className="text-white"
-            >
+      {/* =================== HERO SECTION =================== */}
+      <section ref={heroRef} className="relative pt-12 pb-20 lg:pt-24 lg:pb-32 border-b border-outline-variant/30 overflow-hidden grain-overlay">
+        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
+            {/* Left Typography & CTAs */}
+            <div className="lg:col-span-7 flex flex-col items-start">
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className="text-xs uppercase tracking-[0.2em] font-bold text-outline mb-4"
+              >
+                Purity &amp; Artisanal Sourcing
+              </motion.span>
 
-              <h1 className="font-display text-5xl lg:text-7xl font-bold leading-tight mb-6">
-                The Art of{' '}
-                <span className="text-[#E7E1B1]">Authentic</span>
-                <br />Indian Spices
-              </h1>
-
-              <p className="text-spice-200 text-lg leading-relaxed mb-8 max-w-md">
-                Discover premium spices sourced directly from India's finest farms. 
-                Mix your own custom blends or choose from our expert curated recipes.
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-                <Link to="/products" className="btn-gold px-8 py-4 text-base" id="hero-shop-btn">
-                  Shop Now <FiArrowRight />
-                </Link>
-                <Link to="/mixer" className="flex items-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold rounded-xl transition-all duration-200 text-base" id="hero-mixer-btn">
-                  <GiMortar /> Try Spice Mixer
-                </Link>
-              </div>
-
-              {/* Stats */}
-              <div className="flex gap-8 mt-12 pt-8 border-t border-white/20">
-                {[
-                  { value: '50+', label: 'Spice Varieties' },
-                  { value: '15+', label: 'Blend Templates' },
-                  { value: '10K+', label: 'Happy Customers' },
-                ].map((stat) => (
-                  <div key={stat.label}>
-                    <div className="text-3xl font-bold text-spice-400">{stat.value}</div>
-                    <div className="text-spice-300 text-sm">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Right: Hero Product Stack */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="hidden lg:flex justify-center"
-            >
-              <div className="relative w-96 h-96">
-                {/* Floating product images */}
-                <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute top-0 right-0 w-44 h-44 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
-                  <img src="https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=400" alt="Turmeric" loading="lazy" className="w-full h-full object-cover" />
-                </motion.div>
-                <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  className="absolute bottom-16 left-0 w-52 h-52 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
-                  <img src="https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400" alt="Spices" loading="lazy" className="w-full h-full object-cover" />
-                </motion.div>
-                <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                  className="absolute top-28 left-24 w-36 h-36 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
-                  <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400" alt="Blend" loading="lazy" className="w-full h-full object-cover" />
-                </motion.div>
-
-                {/* Overlay card */}
-                <motion.div
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
-                  className="absolute bottom-0 right-0 glass rounded-2xl p-4 shadow-glass"
+              {/* Staggered clip-path headline */}
+              <div className="overflow-hidden mb-2">
+                <motion.h1
+                  initial={{ y: '110%' }}
+                  animate={{ y: 0 }}
+                  transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                  className="font-serif text-5xl sm:text-7xl lg:text-8xl font-bold text-primary tracking-tight leading-[1.05]"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="flex">
-                      {[1,2,3,4,5].map(s => <FiStar key={s} className="text-spice-400 fill-current text-sm" />)}
-                    </div>
-                    <span className="text-sm font-semibold text-bark-800">4.9/5</span>
-                  </div>
-                  <p className="text-xs text-bark-600 mt-1">From 10,000+ reviews</p>
-                </motion.div>
+                  Artisanal Spices
+                </motion.h1>
               </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+              <div className="overflow-hidden mb-6">
+                <motion.h1
+                  initial={{ y: '110%' }}
+                  animate={{ y: 0 }}
+                  transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+                  className="font-serif text-5xl sm:text-7xl lg:text-8xl font-bold text-primary tracking-tight leading-[1.05]"
+                >
+                  for the Discerning Kitchen.
+                </motion.h1>
+              </div>
 
-      {/* =================== FEATURES =================== */}
-      <section className="py-16 bg-white">
-        <div className="section">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6"
-          >
-            {features.map((f) => (
-              <motion.div key={f.title} variants={itemVariants} className="text-center p-6">
-                <div className="w-14 h-14 bg-chilli-50 text-chilli-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  {f.icon}
-                </div>
-                <h3 className="font-semibold text-bark-900 mb-2">{f.title}</h3>
-                <p className="text-sm text-bark-500">{f.desc}</p>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="text-base sm:text-lg text-on-surface-variant max-w-xl leading-relaxed mb-10"
+              >
+                Sourced directly from India's most pristine valleys and sun-drenched estates. Experience unadulterated potency, single-origin purity, and masterfully balanced custom blends.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex flex-wrap items-center gap-4"
+              >
+                <Link to="/products" className="btn-primary px-8 py-4 text-xs tracking-[0.15em]">
+                  Explore Collection
+                </Link>
+                <Link to="/mixer" className="btn-secondary px-8 py-4 text-xs tracking-[0.15em]">
+                  Custom Spice Mixer
+                </Link>
               </motion.div>
-            ))}
-          </motion.div>
+
+              {/* Minimalist Stats — count-in animation */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.75 }}
+                className="grid grid-cols-3 gap-8 mt-16 pt-8 border-t border-outline-variant/40 w-full max-w-lg"
+              >
+                {[
+                  { val: '100%', label: 'Single Origin' },
+                  { val: '15+',  label: 'Craft Blends'  },
+                  { val: '3-5d', label: 'Express Shipping' },
+                ].map(({ val, label }, i) => (
+                  <motion.div
+                    key={label}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.8 + i * 0.12 }}
+                  >
+                    <p className="font-serif text-3xl font-bold text-primary">{val}</p>
+                    <p className="text-xs text-outline uppercase tracking-wider mt-1">{label}</p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Right — Scale-on-scroll Hero Image */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+              className="lg:col-span-5 relative"
+            >
+              <ScaleReveal
+                src="https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800"
+                alt="MACAW Artisanal Spices"
+                className="aspect-[4/5] shadow-xl border border-outline-variant/40"
+                initialScale={0.78}
+                rounded="rounded-2xl"
+              >
+                {/* Floating accent */}
+                <div className="absolute -bottom-10 -left-10 w-64 h-64 opacity-20 pointer-events-none rotate-12 text-primary float-animate">
+                  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M45,-77.4C58.3,-69.3,69.2,-57,76.5,-43.3C83.9,-29.6,87.6,-14.8,87.6,0C87.6,14.8,83.9,29.6,76.5,43.3C69.2,57,58.3,69.3,45,77.4C31.7,85.5,15.8,89.5,0,89.5C-15.8,89.5,-31.7,85.5,-45,77.4C-58.3,69.3,-69.2,57,-76.5,43.3C-83.9,29.6,-87.6,14.8,-87.6,0C-87.6,-14.8,-83.9,-29.6,-76.5,-43.3C-69.2,-57,-58.3,-69.3,-45,-77.4C-31.7,-85.5,-15.8,-89.5,0,-89.5C15.8,-89.5,31.7,-85.5,45,-77.4Z" fill="currentColor" transform="translate(100 100)" />
+                  </svg>
+                </div>
+                <div className="absolute bottom-6 left-6 right-6 p-6 bg-surface/90 backdrop-blur rounded-xl border border-outline-variant/30">
+                  <p className="font-serif text-xl font-bold text-primary">Harvest Reserve</p>
+                  <p className="text-xs text-on-surface-variant mt-1">First-flush Malabar black pepper &amp; Lakadong turmeric.</p>
+                </div>
+              </ScaleReveal>
+            </motion.div>
+
+          </div>
         </div>
       </section>
 
-      {/* =================== FEATURED PRODUCTS =================== */}
-      <section className="py-20 bg-spice-50">
-        <div className="section">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="text-chilli-600 font-semibold text-sm uppercase tracking-widest mb-2">Fresh Arrivals</p>
-              <h2 className="font-display text-4xl font-bold text-bark-900">Featured Spices</h2>
-            </div>
-            <Link to="/products" className="btn-secondary text-sm hidden md:flex" id="homepage-view-all-btn">
-              View All <FiArrowRight />
-            </Link>
-          </div>
+      {/* =================== MARQUEE TICKER =================== */}
+      <MarqueeStrip />
 
-          {featuredProducts.length > 0 ? (
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+      {/* =================== PRODUCT BANNER (Full-width scale reveal) =================== */}
+      <section ref={featuredRef} className="bg-surface overflow-hidden relative z-20">
+
+        {/* Full-width horizontal image with scroll fade + scale */}
+        <motion.div
+          ref={bannerRef}
+          style={{ opacity: bannerOpacity }}
+          className="relative w-full h-[55vh] sm:h-[65vh] lg:h-[78vh] overflow-hidden z-30 shadow-2xl bg-black"
+        >
+          <ScaleReveal
+            src="/images/macaw_product_banner.png"
+            alt="MACAW Artisan Whole Blend — Khada Garam Masala"
+            className="absolute inset-0 w-full h-full z-10"
+            imgClassName="w-full h-full object-cover object-center"
+            initialScale={0.68}
+            rounded="rounded-none"
+          />
+
+          {/* Dark gradient overlays left + bottom for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent pointer-events-none z-20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent pointer-events-none z-20" />
+
+          {/* Overlaid text — left-aligned editorial layout with scroll parallax drift */}
+          <motion.div
+            style={{ y: bannerTextY }}
+            className="absolute inset-0 flex flex-col justify-end pb-12 lg:pb-16 px-8 sm:px-12 lg:px-20 max-w-3xl z-30"
+          >
+            <motion.span
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="text-xs font-bold uppercase tracking-[0.3em] text-primary-fixed/90 mb-3 block drop-shadow-md"
             >
-              {featuredProducts.map((product) => (
-                <motion.div key={product.id} variants={itemVariants}>
+              Curated Harvest Reserve
+            </motion.span>
+
+            <div className="overflow-hidden mb-3">
+              <motion.h2
+                initial={{ y: '110%' }}
+                whileInView={{ y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="font-serif text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight drop-shadow-lg"
+              >
+                Featured Harvest
+              </motion.h2>
+            </div>
+
+            <motion.p
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="text-base sm:text-lg text-white/90 leading-relaxed mb-8 max-w-lg font-normal drop-shadow"
+            >
+              Single-origin whole spices, micro-milled to order. Each jar sealed within 24 hours of grinding.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.6, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-wrap gap-4 items-center"
+            >
+              <Link to="/products" className="btn-primary px-8 py-4 text-xs tracking-[0.15em] shadow-xl">
+                Shop Collection
+              </Link>
+              <Link to="/products" className="text-white/90 text-xs font-bold uppercase tracking-widest inline-flex items-center gap-2 hover:text-white transition-colors drop-shadow">
+                View All <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </Link>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+
+        {/* Product grid below the banner */}
+        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-16 py-16 relative z-10">
+          {isProductsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 animate-pulse">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="space-y-4">
+                  <div className="aspect-[3/4] bg-surface-container-high rounded-xl" />
+                  <div className="h-6 bg-surface-container-high rounded w-3/4" />
+                  <div className="h-4 bg-surface-container-high rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredProducts.map((product, i) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 32 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  transition={{ duration: 0.65, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                >
                   <ProductCard product={product} />
                 </motion.div>
               ))}
-            </motion.div>
-          ) : (
-            // Skeleton loading
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="card animate-pulse">
-                  <div className="aspect-square bg-spice-100" />
-                  <div className="p-4 space-y-3">
-                    <div className="h-4 bg-spice-100 rounded w-1/2" />
-                    <div className="h-5 bg-spice-100 rounded w-3/4" />
-                    <div className="h-4 bg-spice-100 rounded w-full" />
-                    <div className="h-10 bg-spice-100 rounded w-full mt-4" />
-                  </div>
-                </div>
-              ))}
             </div>
           )}
+        </div>
+      </section>
 
-          <div className="text-center mt-8 md:hidden">
-            <Link to="/products" className="btn-secondary" id="homepage-view-all-mobile-btn">
-              View All Spices <FiArrowRight />
-            </Link>
+      {/* =================== MARQUEE (Reversed) =================== */}
+      <MarqueeStrip reverse />
+
+      {/* =================== CULINARY EXPRESSIONS (BENTO) =================== */}
+      <section ref={bentoRef} className="bg-surface-container-low py-24 border-y border-outline-variant/30">
+        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-16">
+          <div className="mb-16">
+            <h2 className="reveal-text font-serif text-3xl sm:text-4xl text-primary font-bold mb-4" data-delay="1">Culinary Expressions</h2>
+            <p className="reveal-text text-base sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed font-normal" data-delay="2">
+              Discover how to unlock deep, smoldering warmth and aromatic complexity with MACAW signature selections.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Tip 1 */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-surface p-10 rounded-xl flex flex-col justify-between group hover:-translate-y-2 transition-transform duration-500 border border-outline-variant/40 shadow-sm"
+            >
+              <div>
+                <span className="material-symbols-outlined text-primary text-[40px] mb-6 block group-hover:scale-110 transition-transform duration-300">outdoor_grill</span>
+                <h3 className="font-serif text-2xl font-semibold mb-4 text-on-surface">The Perfect Rub</h3>
+                <p className="text-sm text-on-surface-variant leading-relaxed">
+                  Combine with brown sugar, sea salt, and garlic powder for a competition-grade BBQ rub that caramelizes beautifully.
+                </p>
+              </div>
+              <Link to="/blog" className="mt-8 text-xs font-bold uppercase tracking-widest text-primary inline-flex items-center gap-2 group-hover:underline underline-offset-4">
+                Read Guide <span className="material-symbols-outlined text-[16px]">north_east</span>
+              </Link>
+            </motion.div>
+
+            {/* Tip 2 - Featured Large — ScaleReveal */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+              className="md:col-span-2 h-[400px] border border-outline-variant/40 shadow-sm relative"
+            >
+              <ScaleReveal
+                src="https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=800"
+                alt="Authentic Paella"
+                className="absolute inset-0"
+                imgClassName="w-full h-full object-cover"
+                initialScale={0.75}
+                rounded="rounded-xl"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent rounded-xl pointer-events-none" />
+              <div className="absolute bottom-10 left-10 text-white max-w-md z-10">
+                <h3 className="font-serif text-3xl font-bold mb-2">Authentic Paella &amp; Biryani</h3>
+                <p className="text-sm opacity-90 leading-relaxed font-normal">
+                  Unlock the secret of traditional rice dishes by blooming whole spices and saffron in warm ghee before adding your broth.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Tip 3 - Large — ScaleReveal */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="md:col-span-2 h-[400px] border border-outline-variant/40 shadow-sm relative"
+            >
+              <ScaleReveal
+                src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800"
+                alt="Finishing Touch"
+                className="absolute inset-0"
+                imgClassName="w-full h-full object-cover"
+                initialScale={0.75}
+                rounded="rounded-xl"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent rounded-xl pointer-events-none" />
+              <div className="absolute bottom-10 left-10 text-white max-w-md z-10">
+                <h3 className="font-serif text-3xl font-bold mb-2">The Finishing Touch</h3>
+                <p className="text-sm opacity-90 leading-relaxed font-normal">
+                  Dust freshly ground spices over velvety soups, roasted tubers, or artisanal hummus just before serving for dramatic visual appeal.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Tip 4 - Pro Tip */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-primary p-10 rounded-xl text-on-primary flex flex-col justify-center shadow-md"
+            >
+              <span className="text-xs uppercase tracking-[0.2em] font-bold opacity-70 mb-4 block">Master Class Tip</span>
+              <p className="font-serif text-xl md:text-2xl italic leading-relaxed">
+                "Ground spices release their volatile oils instantly. Always toast whole spices gently in dry heat to unlock their true depth."
+              </p>
+              <p className="mt-6 text-xs font-bold uppercase tracking-widest opacity-90">— Master Blender Haaris</p>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* =================== SPICE MIXER PROMO =================== */}
-      <section className="py-20 bg-white">
-        <div className="section">
-          <div className="bg-spice-gradient rounded-3xl overflow-hidden relative">
-            <div className="absolute inset-0 bg-hero-pattern opacity-20" />
-            <div className="relative z-10 p-8 md:p-16 flex flex-col md:flex-row items-center gap-8">
-              <div className="text-white flex-1">
-                <p className="text-spice-400 font-semibold text-sm uppercase tracking-widest mb-3">Custom Experience</p>
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Build Your Perfect Spice Blend</h2>
-                <p className="text-spice-200 text-lg mb-8 max-w-md">
-                  Choose from our expertly crafted blend templates — Garam Masala, Biryani Masala, Kerala Blend and more. 
-                  Each perfectly balanced for authentic flavors.
-                </p>
-                <Link to="/mixer" className="btn-gold px-8 py-4 text-base inline-flex" id="homepage-mixer-cta-btn">
-                  <GiMortar /> Open Spice Mixer
-                </Link>
-              </div>
-              <div className="flex gap-4 shrink-0">
-                {blends.slice(0, 2).map((blend) => (
-                  <motion.div
-                    key={blend.id}
-                    whileHover={{ scale: 1.03 }}
-                    className="w-40 glass rounded-2xl overflow-hidden shadow-xl hidden md:block"
-                  >
-                    <img
-                      src={blend.imageUrl || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=300'}
-                      alt={blend.name}
-                      loading="lazy"
-                      className="w-full h-32 object-cover"
-                    />
-                    <div className="p-3">
-                      <p className="text-bark-900 font-semibold text-sm line-clamp-1">{blend.name}</p>
-                      <p className="text-bark-600 text-xs mt-0.5">
-                        {blend.items?.length} spices · ₹{blend.estimatedPrice?.toFixed(0)}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =================== TESTIMONIALS =================== */}
-      <section className="py-20 bg-spice-50">
-        <div className="section">
-          <div className="text-center mb-12">
-            <p className="text-chilli-600 font-semibold text-sm uppercase tracking-widest mb-2">Reviews</p>
-            <h2 className="font-display text-4xl font-bold text-bark-900">Loved by Home Chefs</h2>
-          </div>
-
+      <section ref={mixerRef} className="py-24 bg-surface">
+        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-16">
           <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid md:grid-cols-3 gap-6"
+            initial={{ opacity: 0, y: 36 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="bg-surface-container rounded-2xl overflow-hidden border border-outline-variant/40 p-8 lg:p-16 flex flex-col lg:flex-row items-center gap-12"
           >
-            {testimonials.map((t) => (
-              <motion.div key={t.name} variants={itemVariants} className="card p-6">
-                <div className="flex mb-3">
-                  {[...Array(t.rating)].map((_, i) => (
-                    <FiStar key={i} className="text-spice-400 fill-current text-base" />
-                  ))}
-                </div>
-                <p className="text-bark-700 italic mb-4 leading-relaxed">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-chilli-100 rounded-full flex items-center justify-center text-chilli-600 font-bold">
-                    {t.name[0]}
+            <div className="flex-1">
+              <span className="reveal-text text-xs uppercase tracking-[0.2em] font-bold text-outline mb-3 block" data-delay="1">Bespoke Apothecary</span>
+              <h2 className="reveal-text font-serif text-4xl lg:text-5xl font-bold text-primary mb-6" data-delay="2">
+                Craft Your Signature Spice Blend
+              </h2>
+              <p className="reveal-text text-base sm:text-lg text-on-surface-variant max-w-xl leading-relaxed mb-8" data-delay="3">
+                Experiment with proportions using our interactive laboratory. Combine Malabar cardamom, Guntur chilis, and wild cumin to build blends tailored precisely to your palate.
+              </p>
+              <Link to="/mixer" className="btn-primary px-8 py-4 text-xs">
+                Enter Spice Mixer
+              </Link>
+            </div>
+
+            {/* Blend Templates Stack — stagger entrance */}
+            <div className="grid grid-cols-2 gap-4 w-full lg:w-auto shrink-0">
+              {blends.map((blend, i) => (
+                <motion.div
+                  key={blend.id}
+                  initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.2 + i * 0.14, ease: [0.16, 1, 0.3, 1] }}
+                  whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                  className="bg-surface p-4 rounded-xl border border-outline-variant/40 shadow-sm w-full sm:w-48"
+                >
+                  <div className="aspect-[4/3] rounded-lg overflow-hidden mb-3 bg-surface-container-low">
+                    <img src={blend.imageUrl || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400'} alt={blend.name} className="w-full h-full object-cover" />
                   </div>
-                  <div>
-                    <p className="font-semibold text-bark-900 text-sm">{t.name}</p>
-                    <p className="text-bark-400 text-xs">{t.location}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                  <h4 className="font-serif font-bold text-on-surface text-base truncate">{blend.name}</h4>
+                  <p className="text-xs text-outline mt-1 font-semibold">{blend.items?.length || 5} Ingredients</p>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </section>
