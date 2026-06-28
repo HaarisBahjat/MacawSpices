@@ -136,15 +136,15 @@ export default function MixerPage() {
   return (
     <div className="min-h-screen bg-spice-50">
       {/* Header */}
-      <div className="bg-spice-gradient py-14 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-hero-pattern opacity-20" />
+      <div className="bg-primary py-14 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: 'radial-gradient(circle at 70% 50%, rgba(255,255,255,0.15) 0%, transparent 60%)'}} />
         <div className="section relative z-10 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm mb-4 border border-white/20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm mb-4 border border-white/20 text-white">
               <GiMortar /> Spice Blend Studio
             </div>
-            <h1 className="font-display text-5xl font-bold mb-4">Build Your Perfect Blend</h1>
-            <p className="text-spice-200 text-lg max-w-xl mx-auto">
+            <h1 className="font-display text-5xl font-bold mb-4 text-white">Build Your Perfect Blend</h1>
+            <p className="text-white/80 text-lg max-w-xl mx-auto">
               Choose from our expertly balanced blend templates. Adjust the quantity and add to your cart.
             </p>
           </motion.div>

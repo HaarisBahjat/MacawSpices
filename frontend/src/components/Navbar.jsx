@@ -7,7 +7,7 @@ import useWishlistStore from '../store/useWishlistStore';
 
 const navLinks = [
   { label: 'Shop', to: '/products' },
-  { label: 'Collections', to: '/products?featured=true' },
+  { label: 'Blogs', to: '/blog' },
   { label: 'Spice Mixer', to: '/mixer' },
   { label: 'Our Story', to: '/about' },
 ];
@@ -56,7 +56,7 @@ export default function Navbar() {
         {/* Navigation Links */}
         <div className="hidden md:flex gap-8 lg:gap-10 items-center">
           {navLinks.map((link) => {
-            const isActive = location.pathname === link.to || (link.to.includes('?') && location.search.includes('featured=true'));
+            const isActive = location.pathname === link.to.split('?')[0];
             return (
               <Link
                 key={link.to}

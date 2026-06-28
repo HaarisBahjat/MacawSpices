@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { FiPackage, FiTrendingUp, FiUsers, FiDollarSign, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPackage, FiTrendingUp, FiUsers, FiDollarSign, FiPlus, FiEdit2, FiTrash2, FiUploadCloud, FiImage, FiX } from 'react-icons/fi';
 import { GiChiliPepper } from 'react-icons/gi';
 import { adminAPI, productAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -235,12 +235,66 @@ function AdminProducts() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', slug: '', description: '', categoryId: '', pricePerGram: '', stock: '', minOrderGram: '50', images: '', featured: false, isActive: true, flavorProfile: '', origin: ''
+    name: '', slug: '', description: '', categoryId: '', pricePerGram: '', stock: '', minOrderGram: '50', images: [], featured: false, isActive: true, flavorProfile: '', origin: ''
   });
+  const [isDragging, setIsDragging] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+
+  const handleFiles = (files) => {
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not an image`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({
+          ...prev,
+          images: Array.isArray(prev.images) ? [...prev.images, e.target.result] : [e.target.result]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleAddUrl = () => {
+    if (!urlInput.trim()) return;
+    setFormData(prev => ({
+      ...prev,
+      images: Array.isArray(prev.images) ? [...prev.images, urlInput.trim()] : [urlInput.trim()]
+    }));
+    setUrlInput('');
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      images: (Array.isArray(prev.images) ? prev.images : []).filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
 
   const resetForm = () => {
     setEditingProduct(null);
-    setFormData({ name: '', slug: '', description: '', categoryId: '', pricePerGram: '', stock: '', minOrderGram: '50', images: '', featured: false, isActive: true, flavorProfile: '', origin: '' });
+    setFormData({ name: '', slug: '', description: '', categoryId: '', pricePerGram: '', stock: '', minOrderGram: '50', images: [], featured: false, isActive: true, flavorProfile: '', origin: '' });
+    setUrlInput('');
   };
 
   const openAddModal = () => {
@@ -253,7 +307,7 @@ function AdminProducts() {
     setFormData({
       name: p.name, slug: p.slug, description: p.description || '', categoryId: p.categoryId,
       pricePerGram: p.pricePerGram, stock: p.stock, minOrderGram: p.minOrderGram,
-      images: p.images?.join(', ') || '', featured: p.featured, isActive: p.isActive,
+      images: Array.isArray(p.images) ? [...p.images] : [], featured: p.featured, isActive: p.isActive,
       flavorProfile: p.flavorProfile || '', origin: p.origin || ''
     });
     setIsModalOpen(true);
@@ -283,7 +337,7 @@ function AdminProducts() {
       pricePerGram: parseFloat(formData.pricePerGram),
       stock: parseFloat(formData.stock),
       minOrderGram: parseFloat(formData.minOrderGram),
-      images: formData.images ? formData.images.split(',').map(i => i.trim()).filter(Boolean) : []
+      images: Array.isArray(formData.images) ? formData.images : (typeof formData.images === 'string' ? formData.images.split(',').map(i => i.trim()).filter(Boolean) : [])
     };
 
     if (editingProduct) {
@@ -409,8 +463,73 @@ function AdminProducts() {
               </div>
 
               <div>
-                <label className="label">Image URLs (comma separated)</label>
-                <input type="text" value={formData.images} onChange={(e) => setFormData({ ...formData, images: e.target.value })} className="input" placeholder="https://..." />
+                <label className="label mb-2 block">Product Images</label>
+                
+                {/* Drag & Drop Zone */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                    isDragging 
+                      ? 'border-chilli-500 bg-chilli-50/50' 
+                      : 'border-spice-200 bg-spice-50 hover:border-spice-300'
+                  }`}
+                >
+                  <input
+                    type="file"
+                    id="file-upload"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFiles(e.target.files)}
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
+                    <FiUploadCloud className={`text-3xl mb-2 ${isDragging ? 'text-chilli-600 animate-bounce' : 'text-bark-400'}`} />
+                    <p className="text-sm font-medium text-bark-800">
+                      Drag & drop images here, or <span className="text-chilli-600 underline">browse</span>
+                    </p>
+                    <p className="text-xs text-bark-400 mt-1">Supports PNG, JPG, WEBP (converted instantly)</p>
+                  </label>
+                </div>
+
+                {/* OR URL Input */}
+                <div className="flex gap-2 mt-3">
+                  <input
+                    type="text"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUrl(); } }}
+                    className="input text-xs flex-1"
+                    placeholder="Or paste an image URL here (https://...)"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddUrl}
+                    className="px-3 py-2 bg-spice-200 text-bark-800 hover:bg-spice-300 rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    Add URL
+                  </button>
+                </div>
+
+                {/* Image Previews */}
+                {(Array.isArray(formData.images) && formData.images.length > 0) && (
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 mt-4">
+                    {formData.images.map((img, idx) => (
+                      <div key={idx} className="relative group rounded-lg overflow-hidden border border-spice-200 bg-white aspect-square flex items-center justify-center shadow-sm">
+                        <img src={img} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-90 hover:opacity-100 transition-opacity shadow"
+                          title="Remove image"
+                        >
+                          <FiX className="text-xs" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-6 mt-2">
