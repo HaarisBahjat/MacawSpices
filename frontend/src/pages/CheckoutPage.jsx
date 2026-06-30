@@ -6,6 +6,7 @@ import { FiCheck, FiMapPin, FiCreditCard, FiPlus, FiShoppingCart } from 'react-i
 import toast from 'react-hot-toast';
 import { authAPI, paymentAPI, orderAPI } from '../services/api';
 import useCartStore from '../store/useCartStore';
+import SelectDropdown from '../components/SelectDropdown';
 
 const STEPS = ['Address', 'Review', 'Payment'];
 
@@ -273,12 +274,16 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <label className="label">Label</label>
-                        <select className="input" value={newAddress.label}
-                          onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}>
-                          <option>Home</option>
-                          <option>Work</option>
-                          <option>Other</option>
-                        </select>
+                        <SelectDropdown
+                          value={newAddress.label || 'Home'}
+                          onChange={(val) => setNewAddress({ ...newAddress, label: val })}
+                          options={[
+                            { value: 'Home', label: 'Home' },
+                            { value: 'Work', label: 'Work' },
+                            { value: 'Other', label: 'Other' },
+                          ]}
+                          className="w-full"
+                        />
                       </div>
                     </div>
                     <div className="flex gap-2 pt-2">

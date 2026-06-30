@@ -6,6 +6,7 @@ import { FiPackage, FiTrendingUp, FiUsers, FiDollarSign, FiPlus, FiEdit2, FiTras
 import { GiChiliPepper } from 'react-icons/gi';
 import { adminAPI, productAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import SelectDropdown from '../components/SelectDropdown';
 
 function StatCard({ icon, label, value, color }) {
   return (
@@ -110,20 +111,21 @@ function AdminOrders() {
             <div className="space-y-3">
               <div>
                 <label className="label">Courier Name</label>
-                <select
-                  className="input"
-                  value={courierName}
-                  onChange={(e) => setCourierName(e.target.value)}
-                >
-                  <option>Delhivery</option>
-                  <option>Blue Dart</option>
-                  <option>DTDC</option>
-                  <option>Ekart</option>
-                  <option>India Post</option>
-                  <option>Xpressbees</option>
-                  <option>Shadowfax</option>
-                  <option>Other</option>
-                </select>
+                <SelectDropdown
+                  value={courierName || 'Delhivery'}
+                  onChange={(val) => setCourierName(val)}
+                  options={[
+                    { value: 'Delhivery', label: 'Delhivery' },
+                    { value: 'Blue Dart', label: 'Blue Dart' },
+                    { value: 'DTDC', label: 'DTDC' },
+                    { value: 'Ekart', label: 'Ekart' },
+                    { value: 'India Post', label: 'India Post' },
+                    { value: 'Xpressbees', label: 'Xpressbees' },
+                    { value: 'Shadowfax', label: 'Shadowfax' },
+                    { value: 'Other', label: 'Other' },
+                  ]}
+                  className="w-full"
+                />
               </div>
               <div>
                 <label className="label">Tracking Number <span className="text-bark-400 font-normal">(optional)</span></label>
@@ -160,9 +162,11 @@ function AdminOrders() {
 
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-bark-900">Orders</h2>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="input py-2 text-sm w-auto">
-          {STATUSES.map((s) => <option key={s} value={s}>{s || 'All Statuses'}</option>)}
-        </select>
+        <SelectDropdown
+          value={status}
+          onChange={(val) => setStatus(val)}
+          options={STATUSES.map((s) => ({ value: s, label: s || 'All Statuses' }))}
+        />
       </div>
       <div className="card overflow-hidden">
         <table className="w-full text-sm">
@@ -198,13 +202,11 @@ function AdminOrders() {
                   </span>
                 </td>
                 <td className="px-5 py-3">
-                  <select
+                  <SelectDropdown
                     value={order.status}
-                    onChange={(e) => handleStatusChange(order, e.target.value)}
-                    className="text-xs border border-spice-200 rounded-lg px-2 py-1"
-                  >
-                    {STATUSES.filter(Boolean).map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                    onChange={(val) => handleStatusChange(order, val)}
+                    options={STATUSES.filter(Boolean).map((s) => ({ value: s, label: s }))}
+                  />
                 </td>
               </tr>
             ))}
@@ -429,10 +431,16 @@ function AdminProducts() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Category</label>
-                  <select required value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="input">
-                    <option value="">Select Category</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <SelectDropdown
+                    value={formData.categoryId || ''}
+                    onChange={(val) => setFormData({ ...formData, categoryId: val })}
+                    placeholder="Select Category"
+                    options={[
+                      { value: '', label: 'Select Category' },
+                      ...categories.map((c) => ({ value: c.id, label: c.name })),
+                    ]}
+                    className="w-full"
+                  />
                 </div>
                 <div>
                   <label className="label">Price per Gram (₹)</label>

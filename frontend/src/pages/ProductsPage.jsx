@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { FiFilter, FiGrid, FiList, FiSearch, FiX } from 'react-icons/fi';
 import { productAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
+import SelectDropdown from '../components/SelectDropdown';
 
 const SORT_OPTIONS = [
   { label: 'Newest', value: 'createdAt_desc' },
@@ -79,17 +80,18 @@ export default function ProductsPage() {
             </div>
 
             {/* Category filter */}
-            <select
+            <SelectDropdown
               id="products-category-filter"
               value={category}
-              onChange={(e) => setParam('category', e.target.value)}
-              className="input py-2 text-sm w-auto pr-8"
-            >
-              <option value="">All Categories</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.slug}>{c.name} ({c._count?.products})</option>
-              ))}
-            </select>
+              onChange={(val) => setParam('category', val)}
+              options={[
+                { value: '', label: 'All Categories' },
+                ...categories.map((c) => ({
+                  value: c.slug,
+                  label: `${c.name} (${c._count?.products || 0})`,
+                })),
+              ]}
+            />
 
             {/* Active filters */}
             {search && (
@@ -104,16 +106,12 @@ export default function ProductsPage() {
 
           <div className="flex items-center gap-3">
             {/* Sort */}
-            <select
+            <SelectDropdown
               id="products-sort-select"
               value={sort}
-              onChange={(e) => setParam('sort', e.target.value)}
-              className="input py-2 text-sm w-auto pr-8"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              onChange={(val) => setParam('sort', val)}
+              options={SORT_OPTIONS}
+            />
 
             {/* View mode */}
             <div className="flex border border-spice-200 rounded-lg overflow-hidden">
