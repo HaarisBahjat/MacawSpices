@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { authenticate } = require('../middleware/auth.middleware');
 const { asyncHandler } = require('../middleware/error.middleware');
 const { prisma } = require('../lib/prisma');
+const { sendOrderConfirmation } = require('../lib/email');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -56,26 +57,46 @@ router.post('/verify', authenticate, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Invalid payment signature', success: false });
   }
 
-  // Update order as paid
-  const order = await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      razorpayOrderId: razorpay_order_id,
-      razorpayPaymentId: razorpay_payment_id,
-      razorpaySignature: razorpay_signature,
-      isPaid: true,
-      status: 'CONFIRMED',
-    },
-    include: {
-      items: {
-        include: {
-          product: { select: { name: true, slug: true, images: true } }
-        }
+  // FIX #1: Use atomic transaction — update order AND decrement stock together
+  const order = await prisma.$transaction(async (tx) => {
+    // 1. Mark order as paid
+    const updatedOrder = await tx.order.update({
+      where: { id: orderId },
+      data: {
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+        razorpaySignature: razorpay_signature,
+        isPaid: true,
+        status: 'CONFIRMED',
       },
-      address: true,
-      user: { select: { name: true, email: true } }
+      include: {
+        items: {
+          include: {
+            product: { select: { name: true, slug: true, images: true } }
+          }
+        },
+        address: true,
+        user: { select: { name: true, email: true } }
+      }
+    });
+
+    // 2. Decrement stock for each product item
+    for (const item of updatedOrder.items) {
+      if (item.productId) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } },
+        });
+      }
     }
+
+    return updatedOrder;
   });
+
+  // FIX #3: Send order confirmation email (non-fatal)
+  sendOrderConfirmation(order).catch((err) =>
+    console.error('[Email] sendOrderConfirmation failed:', err.message)
+  );
 
   res.json({ success: true, order });
 }));
@@ -97,22 +118,58 @@ router.post('/webhook', (req, res) => {
   const event = JSON.parse(req.body.toString());
   console.log('Razorpay webhook event:', event.event);
 
-  // Handle events
+  // FIX #4: Wrapped in try/catch — unhandled rejection cannot crash the server
   (async () => {
-    if (event.event === 'payment.captured') {
-      const paymentId = event.payload.payment.entity.id;
-      const orderId = event.payload.payment.entity.order_id;
-      await prisma.order.updateMany({
-        where: { razorpayOrderId: orderId },
-        data: { isPaid: true, status: 'CONFIRMED', razorpayPaymentId: paymentId }
-      });
-    }
-    if (event.event === 'payment.failed') {
-      const orderId = event.payload.payment.entity.order_id;
-      await prisma.order.updateMany({
-        where: { razorpayOrderId: orderId },
-        data: { status: 'CANCELLED' }
-      });
+    try {
+      if (event.event === 'payment.captured') {
+        const paymentId = event.payload.payment.entity.id;
+        const razorpayOrderId = event.payload.payment.entity.order_id;
+
+        // Find the order by razorpay order ID
+        const existingOrder = await prisma.order.findFirst({
+          where: { razorpayOrderId },
+          include: {
+            items: true,
+            user: { select: { name: true, email: true } },
+            address: true,
+          }
+        });
+
+        if (existingOrder && !existingOrder.isPaid) {
+          // Atomic: mark paid + decrement stock
+          await prisma.$transaction(async (tx) => {
+            await tx.order.update({
+              where: { id: existingOrder.id },
+              data: { isPaid: true, status: 'CONFIRMED', razorpayPaymentId: paymentId },
+            });
+
+            for (const item of existingOrder.items) {
+              if (item.productId) {
+                await tx.product.update({
+                  where: { id: item.productId },
+                  data: { stock: { decrement: item.quantity } },
+                });
+              }
+            }
+          });
+
+          // Send confirmation email
+          sendOrderConfirmation(existingOrder).catch((err) =>
+            console.error('[Webhook Email] sendOrderConfirmation failed:', err.message)
+          );
+        }
+      }
+
+      if (event.event === 'payment.failed') {
+        const razorpayOrderId = event.payload.payment.entity.order_id;
+        await prisma.order.updateMany({
+          where: { razorpayOrderId },
+          data: { status: 'CANCELLED' }
+        });
+      }
+    } catch (error) {
+      // Non-fatal: log but never crash the process
+      console.error('[Webhook] DB error handling event:', event.event, error);
     }
   })();
 

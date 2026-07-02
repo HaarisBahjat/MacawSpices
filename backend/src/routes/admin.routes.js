@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAdmin } = require('../middleware/auth.middleware');
 const { asyncHandler } = require('../middleware/error.middleware');
 const { prisma } = require('../lib/prisma');
+const { sendShippingNotification } = require('../lib/email');
 
 // All admin routes require admin role
 router.use(requireAdmin);
@@ -127,6 +128,14 @@ router.put('/orders/:id/status', asyncHandler(async (req, res) => {
       items: { include: { product: { select: { name: true } } } }
     }
   });
+
+  // Send shipping notification email (non-fatal)
+  if (status === 'SHIPPED') {
+    sendShippingNotification(order).catch((err) =>
+      console.error('[Admin] sendShippingNotification failed:', err.message)
+    );
+  }
+
   res.json({ order });
 }));
 

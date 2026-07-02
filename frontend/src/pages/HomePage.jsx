@@ -111,7 +111,7 @@ export default function HomePage() {
                 transition={{ duration: 0.6 }}
                 className="text-xs uppercase tracking-[0.2em] font-bold text-outline mb-4"
               >
-                Purity &amp; Artisanal Sourcing
+                Pure Taste, Powerful Aroma
               </motion.span>
 
               {/* Staggered clip-path headline */}
@@ -122,7 +122,7 @@ export default function HomePage() {
                   transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
                   className="font-serif text-5xl sm:text-7xl lg:text-8xl font-bold text-primary tracking-tight leading-[1.05]"
                 >
-                  Artisanal Spices
+                  Premium Whole
                 </motion.h1>
               </div>
               <div className="overflow-hidden mb-6">
@@ -132,7 +132,7 @@ export default function HomePage() {
                   transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
                   className="font-serif text-5xl sm:text-7xl lg:text-8xl font-bold text-primary tracking-tight leading-[1.05]"
                 >
-                  for the Discerning Kitchen.
+                  Spices.
                 </motion.h1>
               </div>
 
@@ -142,7 +142,7 @@ export default function HomePage() {
                 transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 className="text-base sm:text-lg text-on-surface-variant max-w-xl leading-relaxed mb-10"
               >
-                Sourced directly from India's most pristine valleys and sun-drenched estates. Experience unadulterated potency, single-origin purity, and masterfully balanced custom blends.
+                Crafted to bring authentic Indian flavor, natural freshness, and rich aroma into every kitchen.
               </motion.p>
 
               <motion.div
@@ -164,21 +164,23 @@ export default function HomePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.75 }}
-                className="grid grid-cols-3 gap-8 mt-16 pt-8 border-t border-outline-variant/40 w-full max-w-lg"
+                className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12 pt-8 border-t border-outline-variant/40 w-full max-w-lg"
               >
                 {[
-                  { val: '100%', label: 'Single Origin' },
-                  { val: '15+',  label: 'Craft Blends'  },
-                  { val: '3-5d', label: 'Express Shipping' },
-                ].map(({ val, label }, i) => (
+                  { icon: '🌿', label: '100% Natural' },
+                  { icon: '🤲', label: 'Handpicked Spices' },
+                  { icon: '✨', label: 'Rich Aroma' },
+                  { icon: '📦', label: 'Hygienically Packed' },
+                ].map(({ icon, label }, i) => (
                   <motion.div
                     key={label}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.8 + i * 0.12 }}
+                    transition={{ duration: 0.5, delay: 0.8 + i * 0.1 }}
+                    className="flex flex-col items-start gap-1.5"
                   >
-                    <p className="font-serif text-3xl font-bold text-primary">{val}</p>
-                    <p className="text-xs text-outline uppercase tracking-wider mt-1">{label}</p>
+                    <span className="text-2xl">{icon}</span>
+                    <p className="text-xs text-on-surface-variant font-semibold uppercase tracking-wider leading-tight">{label}</p>
                   </motion.div>
                 ))}
               </motion.div>

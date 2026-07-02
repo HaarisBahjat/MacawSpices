@@ -48,6 +48,10 @@ const useAuthStore = create(
           } catch(e) {
              set({ token, isAuthenticated: true, isLoading: false });
           }
+
+          // Merge any guest cart items into the server cart
+          useCartStore.getState().syncGuestCartToServer();
+
           return { success: true };
         } catch (error) {
           set({ isLoading: false });
@@ -106,6 +110,8 @@ const useAuthStore = create(
             } catch(e) {
                set({ token: session.access_token, isAuthenticated: true });
             }
+            // Merge any guest cart items into the server cart after session restore
+            useCartStore.getState().syncGuestCartToServer();
           } else {
             set({ user: null, token: null, isAuthenticated: false });
             localStorage.removeItem('sw_token');

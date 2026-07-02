@@ -16,11 +16,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors globally
+// Handle auth errors globally — only redirect for protected endpoints,
+// NOT for cart endpoints (guests use cart locally)
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401) {
+    const url = error.config?.url || '';
+    const isCartEndpoint = url.startsWith('/cart');
+    if (error.response?.status === 401 && !isCartEndpoint) {
       localStorage.removeItem('sw_token');
       window.location.href = '/login';
     }
