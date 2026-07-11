@@ -59,12 +59,17 @@ function AdminOrders() {
   const [searchParams] = useSearchParams();
   const search = (searchParams.get('search') || '').toLowerCase();
   const [status, setStatus] = useState('');
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+
   // Tracking modal state
   const [trackingModal, setTrackingModal] = useState(null); // { orderId, status }
   const [trackingNumber, setTrackingNumber] = useState('');
   const [courierName, setCourierName] = useState('Delhivery');
 
-  const { data } = useQuery({
+  // Checkpoint form state (per expanded order)
+  const [checkpointForm, setCheckpointForm] = useState({ title: '', location: '', description: '', eventStatus: 'HUB_SCAN' });
+
+  const { data, isLoading: ordersLoading } = useQuery({
     queryKey: ['admin-orders', status],
     queryFn: () => adminAPI.getOrders({ status }),
   });
@@ -81,13 +86,30 @@ function AdminOrders() {
     onError: (err) => toast.error(err?.response?.data?.error || 'Update failed'),
   });
 
+  const timelineMutation = useMutation({
+    mutationFn: ({ id, data }) => adminAPI.addTimelineEvent(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries(['admin-orders']);
+      toast.success('Checkpoint logged 📍');
+      setCheckpointForm({ title: '', location: '', description: '', eventStatus: 'HUB_SCAN' });
+    },
+    onError: (err) => toast.error(err?.response?.data?.error || 'Failed to log checkpoint'),
+  });
+
   const handleStatusChange = (order, newStatus) => {
     if (newStatus === 'SHIPPED') {
-      // Open tracking modal before updating
       setTrackingModal({ orderId: order.id, status: newStatus });
     } else {
       updateMutation.mutate({ id: order.id, status: newStatus });
     }
+  };
+
+  const handleCheckpointSubmit = (orderId) => {
+    if (!checkpointForm.title.trim()) {
+      toast.error('Event title is required');
+      return;
+    }
+    timelineMutation.mutate({ id: orderId, data: checkpointForm });
   };
 
   let orders = data?.data?.orders || [];
@@ -99,6 +121,18 @@ function AdminOrders() {
     );
   }
   const STATUSES = ['', 'PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
+  const EVENT_STATUS_OPTIONS = [
+    { value: 'HUB_SCAN', label: '📦 Hub Scan' },
+    { value: 'IN_TRANSIT', label: '🚌 In Transit' },
+    { value: 'OUT_FOR_DELIVERY', label: '🏍️ Out for Delivery' },
+    { value: 'FAILED_ATTEMPT', label: '⚠️ Failed Attempt' },
+    { value: 'DELIVERED', label: '✅ Delivered' },
+    { value: 'CONFIRMED', label: '✨ Confirmed' },
+    { value: 'PROCESSING', label: '🌿 Processing' },
+  ];
+
+  const fmtDate = (ts) => ts ? new Date(ts).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 
   return (
     <div>
@@ -168,54 +202,176 @@ function AdminOrders() {
           options={STATUSES.map((s) => ({ value: s, label: s || 'All Statuses' }))}
         />
       </div>
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-spice-50 text-bark-600">
-            <tr>
-              <th className="text-left px-5 py-3 font-semibold">Order</th>
-              <th className="text-left px-5 py-3 font-semibold">Customer</th>
-              <th className="text-left px-5 py-3 font-semibold">Amount</th>
-              <th className="text-left px-5 py-3 font-semibold">Status</th>
-              <th className="text-left px-5 py-3 font-semibold">Update</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-spice-100">
-            {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-spice-50">
-                <td className="px-5 py-3">
-                  <p className="font-mono text-xs text-bark-600">#{order.id.slice(-8).toUpperCase()}</p>
-                  {order.trackingNumber && (
-                    <p className="text-xs text-orange-600 mt-0.5">🚚 {order.trackingNumber}</p>
-                  )}
-                </td>
-                <td className="px-5 py-3">
-                  <p className="font-medium text-bark-900">{order.user?.name}</p>
+
+      <div className="space-y-3">
+        {orders.map((order) => {
+          const isExpanded = expandedOrderId === order.id;
+          return (
+            <div key={order.id} className="card overflow-hidden">
+              {/* ── Order Summary Row ── */}
+              <div
+                className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-spice-50 transition-colors"
+                onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="font-mono text-xs font-bold text-bark-700">#{order.id.slice(-8).toUpperCase()}</p>
+                    <span className={`badge text-xs ${
+                      order.status === 'DELIVERED' ? 'badge-green' :
+                      order.status === 'CANCELLED' ? 'badge-red' : 'badge-gold'
+                    }`}>
+                      {order.status}
+                    </span>
+                    {order.trackingNumber && (
+                      <span className="text-xs text-orange-600 font-mono">🚚 {order.trackingNumber}</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-bark-900 font-medium mt-0.5">{order.user?.name}</p>
                   <p className="text-xs text-bark-400">{order.user?.email}</p>
-                </td>
-                <td className="px-5 py-3 font-semibold text-bark-900">₹{order.totalAmount.toFixed(0)}</td>
-                <td className="px-5 py-3">
-                  <span className={`badge text-xs ${
-                    order.status === 'DELIVERED' ? 'badge-green' :
-                    order.status === 'CANCELLED' ? 'badge-red' : 'badge-gold'
-                  }`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="px-5 py-3">
+                </div>
+
+                <div className="text-right shrink-0">
+                  <p className="font-bold text-bark-900 text-sm">₹{order.totalAmount.toFixed(0)}</p>
+                  <p className="text-xs text-bark-400">{order.items?.length || 0} items</p>
+                </div>
+
+                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                   <SelectDropdown
                     value={order.status}
                     onChange={(val) => handleStatusChange(order, val)}
                     options={STATUSES.filter(Boolean).map((s) => ({ value: s, label: s }))}
                   />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+
+                <span className={`material-symbols-outlined text-bark-400 text-[20px] shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                  expand_more
+                </span>
+              </div>
+
+              {/* ── Expanded Detail Panel ── */}
+              {isExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="border-t border-spice-100 bg-spice-50/50"
+                >
+                  <div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    {/* Items & Address */}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-bark-400 mb-2">Order Items</p>
+                        <div className="space-y-1.5">
+                          {order.items?.map((item) => (
+                            <div key={item.id} className="flex justify-between text-sm">
+                              <span className="text-bark-700">{item.product?.name || item.blendName || 'Blend'} · {item.quantity}g</span>
+                              <span className="font-semibold text-bark-900">₹{item.totalPrice?.toFixed(0)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {order.address && (
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-bark-400 mb-2">Delivery Address</p>
+                          <p className="text-sm text-bark-700 leading-relaxed">
+                            {order.address.line1}{order.address.line2 ? ', ' + order.address.line2 : ''}<br />
+                            {order.address.city}, {order.address.state} — {order.address.pincode}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Checkpoint Logger */}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-bark-400 mb-3">
+                          📍 Log Tracking Checkpoint
+                        </p>
+                        <div className="space-y-2.5">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="label text-xs">Event Type *</label>
+                              <SelectDropdown
+                                value={checkpointForm.eventStatus}
+                                onChange={(val) => setCheckpointForm(f => ({ ...f, eventStatus: val }))}
+                                options={EVENT_STATUS_OPTIONS}
+                              />
+                            </div>
+                            <div>
+                              <label className="label text-xs">Location</label>
+                              <input
+                                className="input text-sm"
+                                placeholder="e.g. Bengaluru Hub"
+                                value={checkpointForm.location}
+                                onChange={(e) => setCheckpointForm(f => ({ ...f, location: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="label text-xs">Event Title *</label>
+                            <input
+                              className="input text-sm"
+                              placeholder="e.g. Arrived at Sorting Facility"
+                              value={checkpointForm.title}
+                              onChange={(e) => setCheckpointForm(f => ({ ...f, title: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <label className="label text-xs">Description</label>
+                            <input
+                              className="input text-sm"
+                              placeholder="Optional details..."
+                              value={checkpointForm.description}
+                              onChange={(e) => setCheckpointForm(f => ({ ...f, description: e.target.value }))}
+                            />
+                          </div>
+                          <button
+                            onClick={() => handleCheckpointSubmit(order.id)}
+                            disabled={timelineMutation.isPending}
+                            className="btn-primary w-full text-sm py-2"
+                          >
+                            {timelineMutation.isPending ? 'Logging...' : '📍 Log Checkpoint'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Existing Timeline Events */}
+                      {order.timelineEvents?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-bark-400 mb-2">Activity Log</p>
+                          <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                            {order.timelineEvents.slice().reverse().map((ev) => (
+                              <div key={ev.id} className="bg-white rounded-lg px-3 py-2 border border-spice-100 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="font-semibold text-bark-800">{ev.title}</span>
+                                  <span className="text-bark-400 font-mono">{fmtDate(ev.createdAt)}</span>
+                                </div>
+                                {ev.location && <p className="text-orange-600 mt-0.5">📍 {ev.location}</p>}
+                                {ev.description && <p className="text-bark-500 mt-0.5">{ev.description}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          );
+        })}
+        {!ordersLoading && orders.length === 0 && (
+          <div className="card p-12 text-center text-bark-400">No orders found.</div>
+        )}
       </div>
     </div>
   );
 }
+
+
+
 
 function AdminProducts() {
   const qc = useQueryClient();

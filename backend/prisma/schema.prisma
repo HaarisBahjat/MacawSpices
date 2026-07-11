@@ -136,14 +136,16 @@ model Order {
   notes               String?
   trackingNumber      String?     // courier tracking ID
   courierName         String?     // e.g. "Delhivery", "Blue Dart"
+  processedAt         DateTime?   // when order entered PROCESSING
   shippedAt           DateTime?   // when order was marked SHIPPED
   deliveredAt         DateTime?   // when order was marked DELIVERED
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
-  user      User        @relation(fields: [userId], references: [id])
-  address   Address     @relation(fields: [addressId], references: [id])
-  items     OrderItem[]
+  user            User                 @relation(fields: [userId], references: [id])
+  address         Address              @relation(fields: [addressId], references: [id])
+  items           OrderItem[]
+  timelineEvents  OrderTimelineEvent[]
 }
 
 model OrderItem {
@@ -158,6 +160,18 @@ model OrderItem {
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
+}
+
+model OrderTimelineEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  eventStatus String   // e.g. "CONFIRMED", "HUB_SCAN", "OUT_FOR_DELIVERY", "DELIVERED"
+  title       String   // e.g. "Arrived at Sorting Facility"
+  description String?  // e.g. "Package scanned at North Gateway Hub"
+  location    String?  // e.g. "Bengaluru, Karnataka"
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model Review {

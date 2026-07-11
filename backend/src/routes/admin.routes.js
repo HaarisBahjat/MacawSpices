@@ -92,7 +92,8 @@ router.get('/orders', asyncHandler(async (req, res) => {
       include: {
         user: { select: { name: true, email: true } },
         address: true,
-        items: { include: { product: { select: { name: true } } } }
+        items: { include: { product: { select: { name: true } } } },
+        timelineEvents: { orderBy: { createdAt: 'desc' } },
       },
       orderBy: { createdAt: 'desc' },
       skip: (parseInt(page) - 1) * parseInt(limit),
@@ -110,6 +111,9 @@ router.put('/orders/:id/status', asyncHandler(async (req, res) => {
   const updateData = { status };
 
   // Auto-set timestamps when status changes
+  if (status === 'PROCESSING') {
+    updateData.processedAt = new Date();
+  }
   if (status === 'SHIPPED') {
     updateData.shippedAt = new Date();
     if (trackingNumber) updateData.trackingNumber = trackingNumber;
@@ -119,14 +123,37 @@ router.put('/orders/:id/status', asyncHandler(async (req, res) => {
     updateData.deliveredAt = new Date();
   }
 
-  const order = await prisma.order.update({
-    where: { id: req.params.id },
-    data: updateData,
-    include: {
-      user: { select: { name: true, email: true } },
-      address: true,
-      items: { include: { product: { select: { name: true } } } }
-    }
+  const order = await prisma.$transaction(async (tx) => {
+    const updated = await tx.order.update({
+      where: { id: req.params.id },
+      data: updateData,
+      include: {
+        user: { select: { name: true, email: true } },
+        address: true,
+        items: { include: { product: { select: { name: true } } } }
+      }
+    });
+    // Auto-log timeline event for each admin status change
+    const STATUS_LABELS = {
+      CONFIRMED: 'Order Confirmed by Admin',
+      PROCESSING: 'Apothecary Preparation Begun',
+      SHIPPED: 'Dispatched from Estate',
+      DELIVERED: 'Delivered to Customer',
+      CANCELLED: 'Order Cancelled by Admin',
+      REFUNDED: 'Refund Initiated',
+    };
+    await tx.orderTimelineEvent.create({
+      data: {
+        orderId: req.params.id,
+        eventStatus: status,
+        title: STATUS_LABELS[status] || `Status updated to ${status}`,
+        description: status === 'SHIPPED' && trackingNumber
+          ? `Shipped via ${courierName || 'Courier'}. AWB: ${trackingNumber}`
+          : null,
+        location: status === 'SHIPPED' ? 'MacawSpices Estate Dispatch Hub' : null,
+      }
+    });
+    return updated;
   });
 
   // Send shipping notification email (non-fatal)
@@ -140,6 +167,24 @@ router.put('/orders/:id/status', asyncHandler(async (req, res) => {
 }));
 
 // =================== ANALYTICS ===================
+
+// POST /api/admin/orders/:id/timeline — admin logs a granular tracking checkpoint
+router.post('/orders/:id/timeline', asyncHandler(async (req, res) => {
+  const { title, description, location, eventStatus } = req.body;
+  if (!title || !eventStatus) {
+    return res.status(400).json({ error: 'title and eventStatus are required' });
+  }
+  const event = await prisma.orderTimelineEvent.create({
+    data: {
+      orderId: req.params.id,
+      eventStatus,
+      title,
+      description: description || null,
+      location: location || null,
+    }
+  });
+  res.status(201).json({ event });
+}));
 
 // GET /api/admin/stats
 router.get('/stats', asyncHandler(async (req, res) => {

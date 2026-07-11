@@ -58,6 +58,8 @@ export const orderAPI = {
   getMine: () => api.get('/orders/mine'),
   getById: (id) => api.get(`/orders/${id}`),
   create: (data) => api.post('/orders', data),
+  cancel: (id) => api.delete(`/orders/${id}/cancel`),
+  requestReturn: (id, data) => api.post(`/orders/${id}/return`, data),
 };
 
 export const paymentAPI = {
@@ -81,6 +83,7 @@ export const adminAPI = {
   getOrders: (params) => api.get('/admin/orders', { params }),
   updateOrderStatus: (id, status, trackingNumber, courierName) =>
     api.put(`/admin/orders/${id}/status`, { status, trackingNumber, courierName }),
+  addTimelineEvent: (id, data) => api.post(`/admin/orders/${id}/timeline`, data),
 
   createBlend: (data) => api.post('/admin/blends', data),
   createCategory: (data) => api.post('/admin/categories', data),

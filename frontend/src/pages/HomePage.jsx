@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { productAPI, blendAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import ScaleReveal from '../components/ScaleReveal';
+import { FiCheck, FiX } from 'react-icons/fi';
 
 // ── Reveal hook (Zepmeusel-style clip-path reveal on scroll) ──────────────
 function useReveal() {
@@ -32,10 +33,12 @@ function useReveal() {
 
 // ── Marquee Strip ────────────────────────────────────────────────────────
 const MARQUEE_ITEMS = [
-  'Single Origin', '✦', 'Direct Trade', '✦', 'Apothecary Milled',
-  '✦', 'Lab Verified', '✦', 'Zero Adulteration', '✦',
-  'Single Origin', '✦', 'Direct Trade', '✦', 'Apothecary Milled',
-  '✦', 'Lab Verified', '✦', 'Zero Adulteration', '✦',
+  'Premium Whole Spices', '✦', 'Authentic Indian Flavor', '✦', 'Naturally Rich Aroma',
+  '✦', 'Carefully Handpicked Ingredients', '✦', 'Freshness Sealed in Every Pack', '✦',
+  'Hygienically Processed & Packed', '✦', 'Pure Taste, Exceptional Quality', '✦',
+  'Premium Whole Spices', '✦', 'Authentic Indian Flavor', '✦', 'Naturally Rich Aroma',
+  '✦', 'Carefully Handpicked Ingredients', '✦', 'Freshness Sealed in Every Pack', '✦',
+  'Hygienically Processed & Packed', '✦', 'Pure Taste, Exceptional Quality', '✦',
 ];
 
 function MarqueeStrip({ reverse = false }) {
@@ -428,50 +431,82 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* =================== SPICE MIXER PROMO =================== */}
+      {/* =================== COMPARISON SECTION =================== */}
       <section ref={mixerRef} className="py-24 bg-surface">
         <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-16">
-          <motion.div
-            initial={{ opacity: 0, y: 36 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="bg-surface-container rounded-2xl overflow-hidden border border-outline-variant/40 p-8 lg:p-16 flex flex-col lg:flex-row items-center gap-12"
-          >
-            <div className="flex-1">
-              <span className="reveal-text text-xs uppercase tracking-[0.2em] font-bold text-outline mb-3 block" data-delay="1">Bespoke Apothecary</span>
-              <h2 className="reveal-text font-serif text-4xl lg:text-5xl font-bold text-primary mb-6" data-delay="2">
-                Craft Your Signature Spice Blend
-              </h2>
-              <p className="reveal-text text-base sm:text-lg text-on-surface-variant max-w-xl leading-relaxed mb-8" data-delay="3">
-                Experiment with proportions using our interactive laboratory. Combine Malabar cardamom, Guntur chilis, and wild cumin to build blends tailored precisely to your palate.
-              </p>
-              <Link to="/mixer" className="btn-primary px-8 py-4 text-xs">
-                Enter Spice Mixer
-              </Link>
-            </div>
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="reveal-text font-serif text-4xl lg:text-5xl font-bold text-primary mb-4" data-delay="1">
+              MACAW Spices vs Ordinary Spices
+            </h2>
+            <p className="reveal-text text-base sm:text-lg text-on-surface-variant leading-relaxed" data-delay="2">
+              Experience the difference of premium quality, authentic aroma, and carefully selected whole spices.
+            </p>
+          </div>
 
-            {/* Blend Templates Stack — stagger entrance */}
-            <div className="grid grid-cols-2 gap-4 w-full lg:w-auto shrink-0">
-              {blends.map((blend, i) => (
-                <motion.div
-                  key={blend.id}
-                  initial={{ opacity: 0, y: 20, scale: 0.96 }}
-                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.2 + i * 0.14, ease: [0.16, 1, 0.3, 1] }}
-                  whileHover={{ y: -6, transition: { duration: 0.3 } }}
-                  className="bg-surface p-4 rounded-xl border border-outline-variant/40 shadow-sm w-full sm:w-48"
-                >
-                  <div className="aspect-[4/3] rounded-lg overflow-hidden mb-3 bg-surface-container-low">
-                    <img src={blend.imageUrl || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400'} alt={blend.name} className="w-full h-full object-cover" />
-                  </div>
-                  <h4 className="font-serif font-bold text-on-surface text-base truncate">{blend.name}</h4>
-                  <p className="text-xs text-outline mt-1 font-semibold">{blend.items?.length || 5} Ingredients</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* MACAW Spices Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 36 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-chilli-900 rounded-2xl p-8 sm:p-10 border border-primary/40 shadow-xl flex flex-col justify-between relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+              <div className="relative z-10">
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white mb-8">
+                  MACAW Spices
+                </h3>
+                <ul className="space-y-6">
+                  {[
+                    'Strong Natural Aroma',
+                    'Premium Handpicked Quality',
+                    'Rich Natural Oils & Freshness',
+                    'Elegant Hygienic Packaging',
+                    'No Artificial Fillers',
+                  ].map((text, idx) => (
+                    <li key={idx} className="flex items-center gap-4 text-white text-base sm:text-lg font-medium">
+                      <span className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shrink-0 shadow-sm border border-chilli-400">
+                        <FiCheck className="w-4 h-4 stroke-[3]" />
+                      </span>
+                      <span>{text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+
+            {/* Ordinary Spices Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 36 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-surface-container rounded-2xl p-8 sm:p-10 border border-outline-variant/30 shadow-lg flex flex-col justify-between"
+            >
+              <div>
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-on-surface mb-8">
+                  Ordinary Spices
+                </h3>
+                <ul className="space-y-6">
+                  {[
+                    'Weak Aroma After Storage',
+                    'Mixed or Low Quality Selection',
+                    'Less Freshness & Flavor',
+                    'Basic Packaging Quality',
+                    'May Contain Additives',
+                  ].map((text, idx) => (
+                    <li key={idx} className="flex items-center gap-4 text-on-surface-variant text-base sm:text-lg">
+                      <span className="w-7 h-7 rounded-full bg-outline-variant/50 text-outline flex items-center justify-center shrink-0">
+                        <FiX className="w-4 h-4 stroke-[2.5]" />
+                      </span>
+                      <span>{text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
     </div>

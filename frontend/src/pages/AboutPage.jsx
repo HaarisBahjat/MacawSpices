@@ -38,6 +38,7 @@ function ParallaxImage({ src, alt, className }) {
 export default function AboutPage() {
   const philosophyRef = useReveal();
   const qualityRef = useReveal();
+  const whyChooseRef = useReveal();
   const ctaRef = useReveal();
 
   return (
@@ -227,6 +228,62 @@ export default function AboutPage() {
                 <span className="material-symbols-outlined text-primary text-[36px] mb-6 block">{icon}</span>
                 <h3 className="font-serif text-2xl font-bold text-on-surface mb-3">{title}</h3>
                 <p className="text-sm text-on-surface-variant leading-relaxed font-normal">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* =================== WHY CHOOSE MACAW? =================== */}
+      <section ref={whyChooseRef} className="py-24 lg:py-32 bg-chilli-900 text-white relative overflow-hidden">
+        <div className="max-w-container-max mx-auto px-6 sm:px-12 lg:px-16 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="reveal-text font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4" data-delay="1">
+              Why Choose MACAW?
+            </h2>
+            <p className="reveal-text text-primary-fixed/85 text-base sm:text-lg leading-relaxed font-normal" data-delay="2">
+              Crafted with purity, premium quality, and authentic flavor to enhance every meal.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                title: 'Premium Quality',
+                desc: 'Handpicked spices sourced from trusted farms and premium suppliers.',
+                delay: 0.1,
+              },
+              {
+                title: 'Strong Aroma',
+                desc: 'Carefully packed to preserve natural oils, freshness, and authentic taste.',
+                delay: 0.2,
+              },
+              {
+                title: '100% Natural',
+                desc: 'No artificial colors, fillers, preservatives, or harmful additives.',
+                delay: 0.3,
+              },
+              {
+                title: 'Hygienically Packed',
+                desc: 'Processed and packed under strict hygiene and quality standards.',
+                delay: 0.4,
+              },
+            ].map(({ title, desc, delay }) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 32 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                className="bg-chilli-800/70 border border-primary/40 p-6 sm:p-8 rounded-2xl shadow-lg hover:border-primary-fixed transition-colors flex flex-col justify-start"
+              >
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-primary-fixed mb-3">
+                  {title}
+                </h3>
+                <p className="text-sm sm:text-base text-white/80 leading-relaxed font-normal">
+                  {desc}
+                </p>
               </motion.div>
             ))}
           </div>

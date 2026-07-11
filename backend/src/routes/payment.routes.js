@@ -59,7 +59,7 @@ router.post('/verify', authenticate, asyncHandler(async (req, res) => {
 
   // FIX #1: Use atomic transaction — update order AND decrement stock together
   const order = await prisma.$transaction(async (tx) => {
-    // 1. Mark order as paid
+    // 1. Mark order as paid + auto-advance to PROCESSING
     const updatedOrder = await tx.order.update({
       where: { id: orderId },
       data: {
@@ -67,7 +67,8 @@ router.post('/verify', authenticate, asyncHandler(async (req, res) => {
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature,
         isPaid: true,
-        status: 'CONFIRMED',
+        status: 'PROCESSING',
+        processedAt: new Date(),
       },
       include: {
         items: {
@@ -89,6 +90,17 @@ router.post('/verify', authenticate, asyncHandler(async (req, res) => {
         });
       }
     }
+
+    // 3. Seed first timeline event automatically
+    await tx.orderTimelineEvent.create({
+      data: {
+        orderId: updatedOrder.id,
+        eventStatus: 'PROCESSING',
+        title: 'Payment Confirmed & Apothecary Curing Begun',
+        description: 'Your remittance was verified. Master blenders have begun milling & sealing your botanical reserve.',
+        location: 'MacawSpices Estate, India',
+      }
+    });
 
     return updatedOrder;
   });
@@ -136,11 +148,11 @@ router.post('/webhook', (req, res) => {
         });
 
         if (existingOrder && !existingOrder.isPaid) {
-          // Atomic: mark paid + decrement stock
+          // Atomic: mark paid + decrement stock + seed timeline
           await prisma.$transaction(async (tx) => {
             await tx.order.update({
               where: { id: existingOrder.id },
-              data: { isPaid: true, status: 'CONFIRMED', razorpayPaymentId: paymentId },
+              data: { isPaid: true, status: 'PROCESSING', processedAt: new Date(), razorpayPaymentId: paymentId },
             });
 
             for (const item of existingOrder.items) {
@@ -151,7 +163,18 @@ router.post('/webhook', (req, res) => {
                 });
               }
             }
+
+            await tx.orderTimelineEvent.create({
+              data: {
+                orderId: existingOrder.id,
+                eventStatus: 'PROCESSING',
+                title: 'Payment Confirmed & Apothecary Curing Begun',
+                description: 'Your remittance was verified. Master blenders have begun milling & sealing your botanical reserve.',
+                location: 'MacawSpices Estate, India',
+              }
+            });
           });
+
 
           // Send confirmation email
           sendOrderConfirmation(existingOrder).catch((err) =>
