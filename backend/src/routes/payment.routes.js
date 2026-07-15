@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { authenticate } = require('../middleware/auth.middleware');
 const { asyncHandler } = require('../middleware/error.middleware');
 const { prisma } = require('../lib/prisma');
-const { sendOrderConfirmation } = require('../lib/email');
+const { sendOrderConfirmation, sendInvoiceEmail } = require('../lib/email');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -105,9 +105,9 @@ router.post('/verify', authenticate, asyncHandler(async (req, res) => {
     return updatedOrder;
   });
 
-  // FIX #3: Send order confirmation email (non-fatal)
-  sendOrderConfirmation(order).catch((err) =>
-    console.error('[Email] sendOrderConfirmation failed:', err.message)
+  // Send invoice to customer + admin notification (non-fatal)
+  sendInvoiceEmail(order).catch((err) =>
+    console.error('[Email] sendInvoiceEmail failed:', err.message)
   );
 
   res.json({ success: true, order });
@@ -176,9 +176,9 @@ router.post('/webhook', (req, res) => {
           });
 
 
-          // Send confirmation email
-          sendOrderConfirmation(existingOrder).catch((err) =>
-            console.error('[Webhook Email] sendOrderConfirmation failed:', err.message)
+          // Send invoice to customer + admin notification
+          sendInvoiceEmail(existingOrder).catch((err) =>
+            console.error('[Webhook Email] sendInvoiceEmail failed:', err.message)
           );
         }
       }
