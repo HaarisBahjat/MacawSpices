@@ -72,6 +72,10 @@ export const authAPI = {
   updateProfile: (data) => api.put('/auth/profile', data),
   addAddress: (data) => api.post('/auth/addresses', data),
   deleteAddress: (id) => api.delete(`/auth/addresses/${id}`),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  verifyResetOtp: (email, otp) => api.post('/auth/verify-reset-otp', { email, otp }),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
+  googleAuthSync: (data) => api.post('/auth/google', data),
 };
 
 export const adminAPI = {

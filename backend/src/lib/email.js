@@ -489,4 +489,83 @@ const sendShippingNotification = async (order) => {
   }
 };
 
-module.exports = { sendOrderConfirmation, sendShippingNotification, sendInvoiceEmail };
+/**
+ * Sends a Password Reset email containing a 6-digit verification OTP and clickable reset link.
+ * @param {object} user - User object with email and name
+ * @param {object} data - { token, otp }
+ */
+const sendPasswordResetEmail = async (user, { token, otp }) => {
+  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
+
+  if (!isSmtpConfigured()) {
+    console.log('\n======================================================');
+    console.log('                 MACAWSPICES PASSWORD RESET           ');
+    console.log('======================================================');
+    console.log(`To: ${user.email}`);
+    console.log(`Verification OTP: [ ${otp} ] (Valid for 15 minutes)`);
+    console.log(`Reset Link: ${resetLink}`);
+    console.log('======================================================\n');
+    return { success: true, simulated: true };
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f2ed;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2ed;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 6px 32px rgba(0,0,0,0.10);max-width:600px;width:100%;">
+        <tr>
+          <td style="background:linear-gradient(135deg,#0e804f 0%,#0a6040 100%);padding:36px 40px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:0.5px;">MacawSpices</h1>
+            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Security & Account Recovery</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px;">
+            <p style="margin:0 0 20px;font-size:16px;color:#333;">Hello, <strong style="color:#1a1a1a;">${user?.name || 'Valued Customer'}</strong></p>
+            <p style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.6;">
+              We received a request to reset the password for your MacawSpices account associated with <strong style="color:#0e804f;">${user.email}</strong>.
+            </p>
+            <div style="background:#f0faf5;border:1px solid #c6e9d6;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
+              <p style="margin:0 0 8px;font-size:12px;color:#0e804f;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;">Your 6-Digit Verification Code</p>
+              <div style="font-size:32px;font-weight:800;color:#0e804f;letter-spacing:8px;font-family:monospace;margin:8px 0;">${otp}</div>
+              <p style="margin:8px 0 0;font-size:12px;color:#777;">This code expires in <strong>15 minutes</strong>.</p>
+            </div>
+            <div style="text-align:center;margin-bottom:28px;">
+              <p style="margin:0 0 16px;font-size:14px;color:#555;">Or click the button below to reset directly:</p>
+              <a href="${resetLink}" style="display:inline-block;background:#0e804f;color:#ffffff;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;box-shadow:0 4px 12px rgba(14,128,79,0.3);">Reset My Password</a>
+            </div>
+            <p style="margin:0;font-size:13px;color:#888;line-height:1.6;border-top:1px solid #eee;padding-top:20px;">
+              If you did not request this password reset, no action is required—your account remains secure. Never share this code with anyone.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f5f2ed;padding:20px 40px;text-align:center;border-top:1px solid #e8e4df;">
+            <p style="margin:0;font-size:12px;color:#999;">&copy; ${new Date().getFullYear()} MacawSpices - Crafted with care</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const transporter = createTransporter();
+    await transporter.sendMail({
+      from: `"MacawSpices Security" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: `Reset Your Password - Verification Code [${otp}] - MacawSpices`,
+      html,
+    });
+    console.log(`[Email] Password reset OTP sent to ${user.email}`);
+    return { success: true };
+  } catch (err) {
+    console.error('[Email] Failed to send password reset email:', err.message);
+    return { success: false, error: err.message };
+  }
+};
+
+module.exports = { sendOrderConfirmation, sendShippingNotification, sendInvoiceEmail, sendPasswordResetEmail };

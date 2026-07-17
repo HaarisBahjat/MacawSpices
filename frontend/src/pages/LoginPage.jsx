@@ -5,13 +5,15 @@ import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { GiChiliPepper } from 'react-icons/gi';
 import useAuthStore from '../store/useAuthStore';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, isLoading } = useAuthStore();
+  const { login, loginWithGoogle, simulateGoogleDevLogin, isLoading } = useAuthStore();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [showDevGoogle, setShowDevGoogle] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,6 +21,32 @@ export default function LoginPage() {
     const result = await login(form.email, form.password);
     if (result.success) navigate('/');
     else setError(result.error);
+  };
+
+  const handleGoogleClick = async () => {
+    setError('');
+    const res = await loginWithGoogle();
+    if (res && !res.success) {
+      if (res.isProviderDisabled || res.error?.toLowerCase().includes('not enabled')) {
+        setError('Google OAuth provider is not enabled in your Supabase Dashboard under Authentication -> Providers -> Google.');
+        setShowDevGoogle(true);
+        toast.error('Google provider not enabled in Supabase');
+      } else {
+        setError(res.error || 'Failed to initiate Google login.');
+        toast.error(res.error || 'Google login error');
+      }
+    }
+  };
+
+  const handleDevSimulation = async () => {
+    setError('');
+    const res = await simulateGoogleDevLogin();
+    if (res.success) {
+      toast.success('Signed in with Google (Demo/Dev Mode)!');
+      navigate('/');
+    } else {
+      setError(res.error || 'Failed to run dev simulation.');
+    }
   };
 
   return (
@@ -58,7 +86,12 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="label">Password</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label mb-0">Password</label>
+                <Link to="/forgot-password" className="text-xs font-semibold text-chilli-600 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-bark-400" />
                 <input
@@ -104,11 +137,28 @@ export default function LoginPage() {
 
           <button
             id="login-google-btn"
-            onClick={loginWithGoogle}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3.5 border-2 border-spice-200 rounded-xl font-medium text-bark-700 hover:border-chilli-300 hover:bg-spice-50 transition-all"
+            onClick={handleGoogleClick}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3.5 border-2 border-spice-200 rounded-xl font-medium text-bark-700 hover:border-chilli-300 hover:bg-spice-50 transition-all disabled:opacity-50"
           >
             <FcGoogle className="text-xl" /> Continue with Google
           </button>
+
+          {showDevGoogle && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-center">
+              <p className="text-xs text-amber-800 mb-2 font-medium">
+                Tip: Since Google OAuth isn't enabled in Supabase yet, you can test the exact Google Sign-In user experience right now using Dev Mode:
+              </p>
+              <button
+                type="button"
+                onClick={handleDevSimulation}
+                disabled={isLoading}
+                className="w-full py-2 px-3 bg-amber-600 text-white font-semibold rounded-lg text-xs hover:bg-amber-700 transition-colors shadow-sm"
+              >
+                ⚡ Simulate Google Sign-In (Demo User)
+              </button>
+            </div>
+          )}
 
           <p className="text-center text-sm text-bark-500 mt-6">
             Don't have an account?{' '}

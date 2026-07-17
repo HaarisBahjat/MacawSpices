@@ -9,10 +9,37 @@ import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register, loginWithGoogle, isLoading } = useAuthStore();
+  const { register, loginWithGoogle, simulateGoogleDevLogin, isLoading } = useAuthStore();
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [showDevGoogle, setShowDevGoogle] = useState(false);
+
+  const handleGoogleClick = async () => {
+    setError('');
+    const res = await loginWithGoogle();
+    if (res && !res.success) {
+      if (res.isProviderDisabled || res.error?.toLowerCase().includes('not enabled')) {
+        setError('Google OAuth provider is not enabled in your Supabase Dashboard under Authentication -> Providers -> Google.');
+        setShowDevGoogle(true);
+        toast.error('Google provider not enabled in Supabase');
+      } else {
+        setError(res.error || 'Failed to initiate Google sign up.');
+        toast.error(res.error || 'Google login error');
+      }
+    }
+  };
+
+  const handleDevSimulation = async () => {
+    setError('');
+    const res = await simulateGoogleDevLogin();
+    if (res.success) {
+      toast.success('Signed up with Google (Demo/Dev Mode)!');
+      navigate('/');
+    } else {
+      setError(res.error || 'Failed to run dev simulation.');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -154,10 +181,26 @@ export default function RegisterPage() {
             <div className="flex-1 h-px bg-spice-200" />
           </div>
 
-          <button id="register-google-btn" onClick={loginWithGoogle}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3.5 border-2 border-spice-200 rounded-xl font-medium text-bark-700 hover:border-chilli-300 hover:bg-spice-50 transition-all">
+          <button id="register-google-btn" onClick={handleGoogleClick} disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3.5 border-2 border-spice-200 rounded-xl font-medium text-bark-700 hover:border-chilli-300 hover:bg-spice-50 transition-all disabled:opacity-50">
             <FcGoogle className="text-xl" /> Continue with Google
           </button>
+
+          {showDevGoogle && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-center">
+              <p className="text-xs text-amber-800 mb-2 font-medium">
+                Tip: Since Google OAuth isn't enabled in Supabase yet, you can test the exact Google Sign-In user experience right now using Dev Mode:
+              </p>
+              <button
+                type="button"
+                onClick={handleDevSimulation}
+                disabled={isLoading}
+                className="w-full py-2 px-3 bg-amber-600 text-white font-semibold rounded-lg text-xs hover:bg-amber-700 transition-colors shadow-sm"
+              >
+                ⚡ Simulate Google Sign-Up (Demo User)
+              </button>
+            </div>
+          )}
 
           <p className="text-center text-sm text-bark-500 mt-6">
             Already have an account?{' '}
