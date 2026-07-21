@@ -1,19 +1,28 @@
 const { prisma } = require('../src/lib/prisma');
 
 const spiceCategories = [
-  { name: 'Whole Spices', slug: 'whole-spices', imageUrl: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400' },
-  { name: 'Ground Spices', slug: 'ground-spices', imageUrl: 'https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=400' },
-  { name: 'Spice Blends', slug: 'spice-blends', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400' },
-  { name: 'Seeds & Pods', slug: 'seeds-pods', imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400' },
+  { name: 'Whole Spices', slug: 'whole-spices', imageUrl: '/images/spices/blackpepper.webp' },
+  { name: 'Ground Spices', slug: 'ground-spices', imageUrl: '/images/spices/cinnamon-sticks.jpg' },
+  { name: 'Spice Blends', slug: 'spice-blends', imageUrl: '/images/macaw_product_banner.png' },
+  { name: 'Seeds & Pods', slug: 'seeds-pods', imageUrl: '/images/spices/green-cardamom.jpg' },
 ];
 
 async function main() {
   console.log('🌶️  Seeding MacawSpice database...');
 
-  // Clean up existing data to remove arbitrary products
-  await prisma.blendItem.deleteMany({});
-  await prisma.blendTemplate.deleteMany({});
-  await prisma.product.deleteMany({});
+  // Clean up existing data across all dependent tables to remove arbitrary products and duplicates safely
+  try {
+    await prisma.cartItem.deleteMany({});
+    await prisma.wishlistItem.deleteMany({});
+    await prisma.orderItem.deleteMany({});
+    await prisma.review.deleteMany({});
+    await prisma.savedBlend.deleteMany({});
+    await prisma.blendItem.deleteMany({});
+    await prisma.blendTemplate.deleteMany({});
+    await prisma.product.deleteMany({});
+  } catch (e) {
+    console.log('Note during initial cleanup:', e.message);
+  }
 
   // Seed categories
   const categories = {};
@@ -37,7 +46,7 @@ async function main() {
       pricePerGram: 0.75,
       stock: 32000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'],
+      images: ['/images/spices/blackpepper.webp'],
       featured: true,
       flavorProfile: 'Sharp, Pungent, Bold',
       origin: 'India',
@@ -50,7 +59,7 @@ async function main() {
       pricePerGram: 1.20,
       stock: 24000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=600'],
+      images: ['/images/spices/blackcardamom.webp'],
       featured: true,
       flavorProfile: 'Smoky, Intense',
       origin: 'India',
@@ -63,7 +72,7 @@ async function main() {
       pricePerGram: 0.80,
       stock: 24000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600'],
+      images: ['/images/spices/caraway-seeds.webp'],
       featured: false,
       flavorProfile: 'Earthy, Nutty',
       origin: 'India',
@@ -76,7 +85,7 @@ async function main() {
       pricePerGram: 0.90,
       stock: 20000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600'],
+      images: ['/images/spices/cinnamon-sticks.jpg'],
       featured: false,
       flavorProfile: 'Sweet, Warm',
       origin: 'India',
@@ -89,7 +98,7 @@ async function main() {
       pricePerGram: 0.50,
       stock: 16000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600'],
+      images: ['/images/spices/bay-leaf.webp'],
       featured: false,
       flavorProfile: 'Herbal, Floral',
       origin: 'India',
@@ -102,7 +111,7 @@ async function main() {
       pricePerGram: 1.50,
       stock: 16000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'],
+      images: ['/images/spices/star-anise.webp'],
       featured: true,
       flavorProfile: 'Licorice, Sweet',
       origin: 'India',
@@ -115,7 +124,7 @@ async function main() {
       pricePerGram: 2.50,
       stock: 16000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600'],
+      images: ['/images/spices/green-cardamom.jpg'],
       featured: true,
       flavorProfile: 'Floral, Sweet',
       origin: 'India',
@@ -128,7 +137,7 @@ async function main() {
       pricePerGram: 1.80,
       stock: 12000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?w=600'],
+      images: ['/images/spices/cloves.webp'],
       featured: false,
       flavorProfile: 'Pungent, Sweet',
       origin: 'India',
@@ -141,7 +150,7 @@ async function main() {
       pricePerGram: 3.00,
       stock: 12000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=600'],
+      images: ['/images/spices/mace.webp'],
       featured: false,
       flavorProfile: 'Sweet, Spicy',
       origin: 'India',
@@ -154,7 +163,7 @@ async function main() {
       pricePerGram: 2.00,
       stock: 12000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600'],
+      images: ['/images/spices/stone-flower.jpg'],
       featured: false,
       flavorProfile: 'Earthy, Woody',
       origin: 'India',
@@ -167,7 +176,7 @@ async function main() {
       pricePerGram: 1.00,
       stock: 8000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600'],
+      images: ['/images/spices/whitepepper.webp'],
       featured: false,
       flavorProfile: 'Mild, Earthy',
       origin: 'India',
@@ -180,7 +189,7 @@ async function main() {
       pricePerGram: 2.20,
       stock: 6000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600'],
+      images: ['/images/spices/nutmeg.jpg'],
       featured: false,
       flavorProfile: 'Warm, Sweet',
       origin: 'India',
@@ -193,7 +202,7 @@ async function main() {
       pricePerGram: 1.50,
       stock: 2000,
       minOrderGram: 50,
-      images: ['https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600'],
+      images: ['/images/spices/cubeb-pepper.webp'],
       featured: false,
       flavorProfile: 'Peppery, Bitter',
       origin: 'India',
@@ -202,12 +211,22 @@ async function main() {
 
   const createdProducts = {};
   for (const product of products) {
-    const created = await prisma.product.create({
-      data: product,
+    const created = await prisma.product.upsert({
+      where: { slug: product.slug },
+      update: product,
+      create: product,
     });
     createdProducts[product.slug] = created;
     console.log(`✅ Product: ${product.name}`);
   }
+
+  // Ensure ONLY the original 13 products remain in the database (clean up any extras)
+  const originalSlugs = products.map((p) => p.slug);
+  await prisma.product.deleteMany({
+    where: {
+      slug: { notIn: originalSlugs },
+    },
+  });
 
   // Seed blend templates
   const blendTemplates = [
@@ -215,7 +234,7 @@ async function main() {
       name: 'MACAW Blend (50g)',
       slug: 'macaw-blend-50g',
       description: 'The signature MACAW blend with 13 premium spices.',
-      imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600',
+      imageUrl: '/images/macaw_product_banner.png',
       tags: ['macaw', 'signature', 'premium'],
       items: [
         { slug: 'black-pepper', weightGrams: 8 },
@@ -237,6 +256,12 @@ async function main() {
 
   for (const template of blendTemplates) {
     const { items, ...data } = template;
+    // Delete if already exists to refresh its items
+    const existing = await prisma.blendTemplate.findUnique({ where: { slug: data.slug } });
+    if (existing) {
+      await prisma.blendItem.deleteMany({ where: { blendTemplateId: existing.id } });
+      await prisma.blendTemplate.delete({ where: { id: existing.id } });
+    }
     const created = await prisma.blendTemplate.create({
       data: {
         ...data,

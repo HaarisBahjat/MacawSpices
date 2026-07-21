@@ -188,7 +188,7 @@ export default function MixerPage() {
                   }`}
                 >
                   <img
-                    src={blend.imageUrl || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=100'}
+                    src={blend.imageUrl || '/images/macaw_product_banner.png'}
                     alt={blend.name}
                     className="w-16 h-16 rounded-xl object-cover shrink-0"
                   />
@@ -212,7 +212,7 @@ export default function MixerPage() {
                   onClick={() => handleAddCustomItem(product)}
                   className="w-full text-left flex items-center gap-3 p-3 rounded-2xl border-2 border-spice-200 bg-white hover:border-spice-300 transition-all duration-200"
                 >
-                  <img src={product.images?.[0] || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=100'} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                  <img src={product.images?.[0] || '/images/spices/black_pepper.png'} className="w-14 h-14 rounded-xl object-cover shrink-0" />
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold text-bark-900 truncate text-sm">{product.name}</h3>
                     <p className="text-xs text-bark-500">₹{product.pricePerGram}/g</p>
@@ -240,7 +240,7 @@ export default function MixerPage() {
                   <div className="card mb-6 overflow-visible">
                     <div className="relative h-48 overflow-hidden">
                       <img
-                        src={isCustom ? 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800' : (activeBlend?.imageUrl || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=800')}
+                        src={isCustom ? '/images/macaw_product_banner.png' : (activeBlend?.imageUrl || '/images/macaw_product_banner.png')}
                         alt={isCustom ? 'Custom Blend' : activeBlend?.name}
                         className="w-full h-full object-cover"
                       />
@@ -294,7 +294,7 @@ export default function MixerPage() {
                               <div key={item.id} className="bg-spice-50 rounded-xl p-3">
                                 <div className="flex items-center gap-3 mb-2">
                                   <img
-                                    src={item.product?.images?.[0] || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=80'}
+                                    src={item.product?.images?.[0] || '/images/spices/black_pepper.png'}
                                     alt={item.product?.name}
                                     className="w-10 h-10 rounded-lg object-cover"
                                   />

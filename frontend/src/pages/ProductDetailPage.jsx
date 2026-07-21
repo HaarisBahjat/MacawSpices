@@ -76,7 +76,7 @@ export default function ProductDetailPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.4 }}
-                src={product.images?.[selectedImage] || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800'}
+                src={product.images?.[selectedImage] || '/images/spices/black_pepper.png'}
                 alt={product.name}
                 className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
               />
@@ -258,7 +258,7 @@ export default function ProductDetailPage() {
 
             <div className="md:col-span-2 relative h-[400px] rounded-xl overflow-hidden group border border-outline-variant/40 shadow-sm">
               <img
-                src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800"
+                src="/images/spices/cinnamon_sticks.png"
                 alt="Culinary Pairing"
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"

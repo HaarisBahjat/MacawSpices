@@ -28,6 +28,7 @@ const useCartStore = create(
       items: [],
       subtotal: 0,
       isLoading: false,
+      hasGuestItems: false,
 
       // ── Core: fetch cart from server and sync (only when authenticated) ──
       fetchCart: async () => {
@@ -35,7 +36,7 @@ const useCartStore = create(
         try {
           const { data } = await cartAPI.get();
           const items = data.cart.items || [];
-          set({ items, subtotal: data.cart.subtotal || computeSubtotal(items) });
+          set({ items, subtotal: data.cart.subtotal || computeSubtotal(items), hasGuestItems: false });
         } catch (err) {
           // Server unreachable or session expired — keep local state
         }
@@ -59,7 +60,7 @@ const useCartStore = create(
           } else {
             updated = [...current, { ...item, addedAt: new Date().toISOString() }];
           }
-          set({ items: updated, subtotal: computeSubtotal(updated), isLoading: false });
+          set({ items: updated, subtotal: computeSubtotal(updated), isLoading: false, hasGuestItems: true });
           toast.success('Added to cart!', {
             icon: '🌶️',
             style: { background: '#0e804f', color: '#fff' },
@@ -88,7 +89,7 @@ const useCartStore = create(
           const updated = get().items.map((i) =>
             i.productId === productId ? { ...i, quantity } : i
           );
-          set({ items: updated, subtotal: computeSubtotal(updated) });
+          set({ items: updated, subtotal: computeSubtotal(updated), hasGuestItems: updated.length > 0 });
           return;
         }
         try {
@@ -103,7 +104,7 @@ const useCartStore = create(
       removeItem: async (productId) => {
         if (!isLoggedIn()) {
           const updated = get().items.filter((i) => i.productId !== productId);
-          set({ items: updated, subtotal: computeSubtotal(updated) });
+          set({ items: updated, subtotal: computeSubtotal(updated), hasGuestItems: updated.length > 0 });
           toast.success('Removed from cart');
           return;
         }
@@ -121,14 +122,22 @@ const useCartStore = create(
         if (isLoggedIn()) {
           try { await cartAPI.clear(); } catch {}
         }
-        set({ items: [], subtotal: 0 });
+        set({ items: [], subtotal: 0, hasGuestItems: false });
       },
 
       // ── Sync guest cart → server on login ─────────────────────────────────
       // Call this right after a successful login/OAuth callback
       syncGuestCartToServer: async () => {
+        if (!get().hasGuestItems) {
+          await get().fetchCart();
+          return;
+        }
         const guestItems = get().items;
-        if (!guestItems.length) return;
+        if (!guestItems.length) {
+          set({ hasGuestItems: false });
+          await get().fetchCart();
+          return;
+        }
 
         // Push each guest item to server one by one
         const errors = [];
@@ -145,6 +154,7 @@ const useCartStore = create(
           }
         }
         // Replace local state with fresh server state
+        set({ hasGuestItems: false });
         await get().fetchCart();
         if (errors.length) {
           toast.error(`Some items could not be synced (out of stock?)`);
@@ -163,6 +173,7 @@ const useCartStore = create(
       partialize: (state) => ({
         items: state.items,
         subtotal: state.subtotal,
+        hasGuestItems: state.hasGuestItems,
       }),
     }
   )

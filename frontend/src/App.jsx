@@ -6,6 +6,7 @@ import Lenis from 'lenis';
 
 import useAuthStore from './store/useAuthStore';
 import useCartStore from './store/useCartStore';
+import useWishlistStore from './store/useWishlistStore';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -52,6 +53,7 @@ const AdminRoute = ({ children }) => {
 function App() {
   const { initAuth, isAuthenticated } = useAuthStore();
   const { fetchCart } = useCartStore();
+  const { fetchWishlist } = useWishlistStore();
 
   // ── Lenis smooth scroll (zepmeusel-style) ───────────────────────────────
   useEffect(() => {
@@ -85,10 +87,11 @@ function App() {
     initAuth();
   }, []);
 
-  // Fetch cart whenever user is/becomes authenticated
+  // Fetch cart & wishlist whenever user is/becomes authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchCart();
+      fetchWishlist();
     }
   }, [isAuthenticated]);
 

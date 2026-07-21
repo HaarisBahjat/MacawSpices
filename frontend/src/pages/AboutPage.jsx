@@ -137,7 +137,7 @@ export default function AboutPage() {
               className="lg:col-span-6 relative"
             >
               <ScaleReveal
-                src="https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800"
+                src="/images/about/spice_sourcing.png"
                 alt="Artisanal Spice Sourcing"
                 className="aspect-[4/3] border border-outline-variant/40 shadow-sm relative"
                 imgClassName="w-full h-full object-cover"

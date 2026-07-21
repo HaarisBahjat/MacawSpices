@@ -197,7 +197,7 @@ export default function HomePage() {
               className="lg:col-span-5 relative"
             >
               <ScaleReveal
-                src="https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800"
+                src="/images/macaw_product_banner.png"
                 alt="MACAW Artisanal Spices"
                 className="aspect-[4/5] shadow-xl border border-outline-variant/40"
                 initialScale={0.78}
@@ -372,7 +372,7 @@ export default function HomePage() {
               className="md:col-span-2 h-[400px] border border-outline-variant/40 shadow-sm relative"
             >
               <ScaleReveal
-                src="https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=800"
+                src="/images/spices/saffron_threads.png"
                 alt="Authentic Paella"
                 className="absolute inset-0"
                 imgClassName="w-full h-full object-cover"
@@ -397,7 +397,7 @@ export default function HomePage() {
               className="md:col-span-2 h-[400px] border border-outline-variant/40 shadow-sm relative"
             >
               <ScaleReveal
-                src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800"
+                src="/images/spices/cinnamon_sticks.png"
                 alt="Finishing Touch"
                 className="absolute inset-0"
                 imgClassName="w-full h-full object-cover"

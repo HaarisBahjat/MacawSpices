@@ -54,6 +54,13 @@ export const cartAPI = {
   clear: () => api.delete('/cart/clear'),
 };
 
+export const wishlistAPI = {
+  get: () => api.get('/wishlist'),
+  toggle: (productId) => api.post('/wishlist/toggle', { productId }),
+  sync: (productIds) => api.post('/wishlist/sync', { productIds }),
+  clear: () => api.delete('/wishlist/clear'),
+};
+
 export const orderAPI = {
   getMine: () => api.get('/orders/mine'),
   getById: (id) => api.get(`/orders/${id}`),

@@ -168,7 +168,7 @@ export default function AccountPage() {
                     {savedBlends.map((saved) => (
                       <div key={saved.id} className="card p-4">
                         <img
-                          src={saved.blendTemplate.imageUrl || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400'}
+                          src={saved.blendTemplate.imageUrl || '/images/macaw_product_banner.png'}
                           alt={saved.blendTemplate.name}
                           className="w-full h-32 object-cover rounded-xl mb-3"
                         />

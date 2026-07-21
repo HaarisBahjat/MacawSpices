@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { createClient } from '@supabase/supabase-js';
 import { authAPI } from '../services/api';
 import useCartStore from './useCartStore';
+import useWishlistStore from './useWishlistStore';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -49,8 +50,9 @@ const useAuthStore = create(
              set({ token, isAuthenticated: true, isLoading: false });
           }
 
-          // Merge any guest cart items into the server cart
+          // Merge any guest cart & wishlist items into the server DB
           useCartStore.getState().syncGuestCartToServer();
+          useWishlistStore.getState().syncGuestWishlistToServer();
 
           return { success: true };
         } catch (error) {
@@ -112,7 +114,7 @@ const useAuthStore = create(
           const demoEmail = 'google_demo_user@macawspices.com';
           const demoPassword = 'GoogleDemoUserAuth#2026';
           const demoName = 'Google Demo User';
-          const demoAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
+          const demoAvatar = '/images/macaw_product_banner.png';
 
           // Try signing up or logging in with password in Supabase first
           let { data, error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
@@ -151,6 +153,7 @@ const useAuthStore = create(
           });
 
           useCartStore.getState().syncGuestCartToServer();
+          useWishlistStore.getState().syncGuestWishlistToServer();
           return { success: true };
         } catch (error) {
           set({ isLoading: false });
@@ -180,6 +183,7 @@ const useAuthStore = create(
           });
 
           useCartStore.getState().syncGuestCartToServer();
+          useWishlistStore.getState().syncGuestWishlistToServer();
           return { success: true };
         } catch (error) {
           set({ isLoading: false });
@@ -240,7 +244,10 @@ const useAuthStore = create(
         await supabase.auth.signOut();
         set({ user: null, token: null, isAuthenticated: false });
         localStorage.removeItem('sw_token');
+        localStorage.removeItem('macawspice-cart');
+        localStorage.removeItem('macawspice-wishlist');
         useCartStore.setState({ items: [], subtotal: 0 });
+        useWishlistStore.setState({ items: [] });
       },
 
       initAuth: async () => {
@@ -263,12 +270,16 @@ const useAuthStore = create(
             } catch(e) {
                set({ token: session.access_token, isAuthenticated: true });
             }
-            // Merge any guest cart items into the server cart after session restore
+            // Merge any guest cart & wishlist items into the server DB after session restore
             useCartStore.getState().syncGuestCartToServer();
+            useWishlistStore.getState().syncGuestWishlistToServer();
           } else {
             set({ user: null, token: null, isAuthenticated: false });
             localStorage.removeItem('sw_token');
+            localStorage.removeItem('macawspice-cart');
+            localStorage.removeItem('macawspice-wishlist');
             useCartStore.setState({ items: [], subtotal: 0 });
+            useWishlistStore.setState({ items: [] });
           }
         });
       },

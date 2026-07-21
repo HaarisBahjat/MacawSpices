@@ -68,4 +68,47 @@ const cartService = {
   },
 };
 
-module.exports = { cartService, redis };
+const getWishlistKey = (userId) => `wishlist:${userId}`;
+
+const wishlistService = {
+  async getWishlist(userId) {
+    try {
+      const data = await redis.get(getWishlistKey(userId));
+      return data ? (typeof data === 'string' ? JSON.parse(data) : data) : { items: [] };
+    } catch (error) {
+      console.error('Redis getWishlist error:', error);
+      return { items: [] };
+    }
+  },
+
+  async setWishlist(userId, wishlist) {
+    try {
+      // Store wishlist for 365 days
+      await redis.set(getWishlistKey(userId), JSON.stringify(wishlist), { ex: 365 * 24 * 60 * 60 });
+    } catch (error) {
+      console.error('Redis setWishlist error:', error);
+    }
+  },
+
+  async toggleItem(userId, productId) {
+    const wishlist = await this.getWishlist(userId);
+    const exists = wishlist.items.some((id) => id === productId || id?.id === productId || id?.productId === productId);
+    if (exists) {
+      wishlist.items = wishlist.items.filter((id) => (typeof id === 'string' ? id !== productId : id.id !== productId && id.productId !== productId));
+    } else {
+      wishlist.items.push(productId);
+    }
+    await this.setWishlist(userId, wishlist);
+    return wishlist;
+  },
+
+  async clearWishlist(userId) {
+    try {
+      await redis.del(getWishlistKey(userId));
+    } catch (error) {
+      console.error('Redis clearWishlist error:', error);
+    }
+  },
+};
+
+module.exports = { cartService, wishlistService, redis };

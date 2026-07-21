@@ -27,7 +27,7 @@ export default function ProductCard({ product }) {
       <Link to={`/products/${product.slug}`} className="block">
         <div className="aspect-[3/4] bg-surface-container-low rounded-xl mb-5 overflow-hidden relative border border-outline-variant/40">
           <img
-            src={product.images?.[0] || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600'}
+            src={product.images?.[0] || '/images/spices/black_pepper.png'}
             alt={product.name}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
