@@ -57,11 +57,32 @@ router.post('/verify', authenticate, asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Invalid payment signature', success: false });
   }
 
-  // FIX #1: Use atomic transaction — update order AND decrement stock together
+  // Idempotent payment verification transaction
   const order = await prisma.$transaction(async (tx) => {
+    // Find target order
+    const existing = orderId
+      ? await tx.order.findUnique({ where: { id: orderId } })
+      : await tx.order.findFirst({ where: { razorpayOrderId: razorpay_order_id } });
+
+    if (!existing) {
+      throw new Error('Order record not found');
+    }
+
+    // Idempotency check: if already marked paid (e.g. by webhook), return as is
+    if (existing.isPaid) {
+      return tx.order.findUnique({
+        where: { id: existing.id },
+        include: {
+          items: { include: { product: { select: { name: true, slug: true, images: true } } } },
+          address: true,
+          user: { select: { name: true, email: true } }
+        }
+      });
+    }
+
     // 1. Mark order as paid + auto-advance to PROCESSING
     const updatedOrder = await tx.order.update({
-      where: { id: orderId },
+      where: { id: existing.id },
       data: {
         razorpayOrderId: razorpay_order_id,
         razorpayPaymentId: razorpay_payment_id,

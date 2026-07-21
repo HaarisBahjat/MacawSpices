@@ -2,18 +2,24 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { productAPI } from '../services/api';
 import useCartStore from '../store/useCartStore';
+import useAuthStore from '../store/useAuthStore';
 import ProductCard from '../components/ProductCard';
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
   const { addItem } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantityGrams, setQuantityGrams] = useState(50);
   const [activeTab, setActiveTab] = useState(null); // 'origin' or 'nutrition' or 'reviews'
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['product', slug],
     queryFn: () => productAPI.getBySlug(slug),
   });
@@ -59,6 +65,25 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     addItem({ productId: product.id, quantity: quantityGrams, type: 'product' });
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      toast.error('Please sign in to write a review.');
+      return;
+    }
+    setIsSubmittingReview(true);
+    try {
+      await productAPI.addReview(product.id, { rating: reviewRating, comment: reviewComment });
+      toast.success('Thank you! Your review has been submitted.');
+      setReviewComment('');
+      refetch();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to submit review');
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   return (
@@ -269,6 +294,126 @@ export default function ProductDetailPage() {
                 <p className="text-sm opacity-90 leading-relaxed font-normal">
                   Incorporate into marinades or finishing dusts to impart unmistakable terroir and vibrant visual drama.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Reviews Section */}
+      <section className="py-20 bg-surface border-b border-outline-variant/30">
+        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            {/* Reviews Summary & List */}
+            <div className="lg:col-span-7">
+              <span className="text-xs uppercase tracking-[0.15em] font-bold text-outline mb-2 block">Customer Feedbacks</span>
+              <h2 className="font-serif text-3xl sm:text-4xl text-primary font-bold mb-6">Ratings & Reviews</h2>
+
+              <div className="flex items-center gap-4 mb-8 bg-surface-container-low p-6 rounded-xl border border-outline-variant/30">
+                <div className="text-center border-r border-outline-variant/40 pr-6">
+                  <p className="font-serif text-4xl font-bold text-primary">{(product.avgRating || 0).toFixed(1)}</p>
+                  <div className="flex text-amber-500 justify-center text-sm mt-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span key={star} className="material-symbols-outlined text-[18px]">
+                        {star <= Math.round(product.avgRating || 0) ? 'star' : 'star_outline'}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-outline mt-1 font-semibold">{product.reviews?.length || 0} reviews</p>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-on-surface mb-1">Apothecary Verified Quality</p>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    Read unvarnished feedback from culinary enthusiasts and professional chefs.
+                  </p>
+                </div>
+              </div>
+
+              {/* Review list */}
+              <div className="space-y-4">
+                {product.reviews && product.reviews.length > 0 ? (
+                  product.reviews.map((rev) => (
+                    <div key={rev.id} className="p-5 rounded-xl bg-surface-container-low border border-outline-variant/30">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
+                            {rev.user?.name ? rev.user.name[0].toUpperCase() : 'U'}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-on-surface">{rev.user?.name || 'Verified Connoisseur'}</p>
+                            <p className="text-[10px] text-outline">{new Date(rev.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="flex text-amber-500">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span key={star} className="material-symbols-outlined text-[16px]">
+                              {star <= rev.rating ? 'star' : 'star_outline'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      {rev.comment && <p className="text-xs text-on-surface-variant leading-relaxed mt-2">{rev.comment}</p>}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-on-surface-variant italic">No reviews yet. Be the first to review this specimen!</p>
+                )}
+              </div>
+            </div>
+
+            {/* Write a Review Form */}
+            <div className="lg:col-span-5">
+              <div className="bg-surface-container-low p-8 rounded-xl border border-outline-variant/40 sticky top-28 shadow-sm">
+                <h3 className="font-serif text-2xl font-bold text-primary mb-2">Write a Review</h3>
+                <p className="text-xs text-on-surface-variant mb-6 leading-relaxed">
+                  Share your culinary experience with this harvest.
+                </p>
+
+                {isAuthenticated ? (
+                  <form onSubmit={handleSubmitReview} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface block mb-2">Your Rating</label>
+                      <div className="flex gap-2 text-amber-500">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewRating(star)}
+                            className="focus:outline-none transition-transform hover:scale-110"
+                          >
+                            <span className="material-symbols-outlined text-[28px]">
+                              {star <= reviewRating ? 'star' : 'star_outline'}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-on-surface block mb-2">Your Comment (Optional)</label>
+                      <textarea
+                        rows={4}
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        placeholder="Describe flavor notes, aroma intensity, or dish applications..."
+                        className="w-full bg-surface border border-outline-variant/50 rounded-lg p-3 text-xs focus:ring-2 focus:ring-primary outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmittingReview}
+                      className="w-full bg-primary text-on-primary h-12 rounded-lg text-xs font-bold uppercase tracking-[0.15em] hover:opacity-90 transition-all disabled:opacity-50"
+                    >
+                      {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="text-center py-6 border border-dashed border-outline-variant/60 rounded-xl">
+                    <p className="text-xs text-on-surface-variant mb-4">Please log in to submit a rating or review for this item.</p>
+                    <Link to="/login" className="btn-primary text-xs px-6 py-3">Log In</Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>

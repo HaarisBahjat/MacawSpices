@@ -35,6 +35,7 @@ export const productAPI = {
   getAll: (params) => api.get('/products', { params }),
   getBySlug: (slug) => api.get(`/products/${slug}`),
   getCategories: () => api.get('/products/categories'),
+  addReview: (productId, data) => api.post(`/products/${productId}/reviews`, data),
 };
 
 export const blendAPI = {

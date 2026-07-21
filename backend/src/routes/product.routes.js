@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { optionalAuth } = require('../middleware/auth.middleware');
+const { optionalAuth, authenticate } = require('../middleware/auth.middleware');
 const { asyncHandler } = require('../middleware/error.middleware');
 const { prisma } = require('../lib/prisma');
 
@@ -101,10 +101,44 @@ router.get('/:slug', asyncHandler(async (req, res) => {
   res.json({ product: { ...product, avgRating } });
 }));
 
-// POST /api/products/:id/reviews - add review
-router.post('/:id/reviews', asyncHandler(async (req, res) => {
-  // handled in auth-protected section
-  const { authenticate } = require('../middleware/auth.middleware');
+// POST /api/products/:id/reviews - add or update product review
+router.post('/:id/reviews', authenticate, asyncHandler(async (req, res) => {
+  const { rating, comment } = req.body;
+  const productId = req.params.id;
+
+  const parsedRating = parseInt(rating);
+  if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+    return res.status(400).json({ error: 'Rating must be an integer between 1 and 5' });
+  }
+
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' });
+  }
+
+  const review = await prisma.review.upsert({
+    where: {
+      userId_productId: {
+        userId: req.user.id,
+        productId,
+      },
+    },
+    update: {
+      rating: parsedRating,
+      comment: comment ? String(comment).trim() : null,
+    },
+    create: {
+      userId: req.user.id,
+      productId,
+      rating: parsedRating,
+      comment: comment ? String(comment).trim() : null,
+    },
+    include: {
+      user: { select: { name: true, avatarUrl: true } },
+    },
+  });
+
+  res.status(201).json({ review, message: 'Review submitted successfully' });
 }));
 
 module.exports = router;

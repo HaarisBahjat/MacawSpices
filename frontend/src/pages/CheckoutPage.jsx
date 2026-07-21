@@ -107,23 +107,43 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Validate total
-      if (!total || total < 1) {
-        toast.error('Cart total is invalid. Please refresh and try again.');
+      // Step 1: Create DB order (with stock validation & server pricing) + pre-create Razorpay order
+      const orderRes = await orderAPI.create({
+        addressId: selectedAddress,
+        items: items.map((item) => ({
+          productId: item.type === 'product' ? item.productId : null,
+          blendName: item.type === 'blend' ? (item.blendData?.blendName || 'Custom Blend') : null,
+          blendData: item.blendData || null,
+          quantity: item.quantity || 1,
+          unitPrice: item.product?.pricePerGram || (item.price || 0),
+          totalPrice: item.type === 'product'
+            ? (item.product?.pricePerGram || 0) * item.quantity
+            : item.price || 0,
+        })),
+      });
+
+      const dbOrder = orderRes.data.order;
+      const razorpayOrder = orderRes.data.razorpayOrder;
+      const keyId = orderRes.data.keyId;
+
+      // Fallback if Razorpay credentials are absent in environment
+      if (!razorpayOrder) {
+        // Direct order fallback (e.g. dev/test mode without live Razorpay keys)
+        await clearCart();
+        toast.success('Order created successfully!');
         setIsProcessing(false);
+        navigate('/order-success', { state: { order: dbOrder }, replace: true });
         return;
       }
 
-      // Create Razorpay order
-      const { data } = await paymentAPI.createOrder({ amount: total });
-
+      // Step 2: Open Razorpay modal with pre-generated Razorpay order ID
       const options = {
-        key: data.keyId,
-        amount: data.amount,
-        currency: data.currency,
-        name: 'MacawSpice',
-        description: `Order of ${items.length} items`,
-        order_id: data.orderId,
+        key: keyId,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: 'MacawSpices',
+        description: `Order #${dbOrder.id.slice(-8).toUpperCase()}`,
+        order_id: razorpayOrder.id,
         prefill: {
           name: profile?.name,
           email: profile?.email,
@@ -132,42 +152,23 @@ export default function CheckoutPage() {
         theme: { color: '#B5451B' },
         handler: async (response) => {
           try {
-            // Create order in DB
-            const orderRes = await orderAPI.create({
-              addressId: selectedAddress,
-              items: items.map((item) => ({
-                productId: item.type === 'product' ? item.productId : null,
-                blendName: item.type === 'blend' ? (item.blendData?.blendName || 'Custom Blend') : null,
-                blendData: item.blendData || null,
-                quantity: item.quantity || 1,
-                unitPrice: item.product?.pricePerGram || (item.price || 0),
-                totalPrice: item.type === 'product'
-                  ? (item.product?.pricePerGram || 0) * item.quantity
-                  : item.price || 0,
-              })),
-              totalAmount: total,
-              razorpayOrderId: data.orderId,
-            });
-
-            // Verify payment — response contains full order data
+            // Step 3: Verify payment signature and advance order status to PROCESSING
             const verifyRes = await paymentAPI.verify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              orderId: orderRes.data.order.id,
+              orderId: dbOrder.id,
             });
 
             await clearCart();
             toast.success('Payment successful! Order placed 🎉');
             setIsProcessing(false);
-            // Navigate to success page, passing full order data via state
-            const confirmedOrder = verifyRes?.data?.order || orderRes.data.order;
+            const confirmedOrder = verifyRes?.data?.order || dbOrder;
             navigate('/order-success', { state: { order: confirmedOrder }, replace: true });
-
           } catch (handlerErr) {
             console.error('❌ Payment handler error:', handlerErr);
             toast.error('Payment verification failed. Contact support.');
-            setIsProcessing(false);  // ← must reset so user can retry
+            setIsProcessing(false);
           }
         },
         modal: { ondismiss: () => setIsProcessing(false) },
@@ -177,7 +178,7 @@ export default function CheckoutPage() {
       rzp.open();
     } catch (err) {
       console.error('❌ Payment initiation error:', err?.response?.data || err?.message || err);
-      const msg = err?.response?.data?.error || 'Failed to initiate payment. Try again.';
+      const msg = err?.response?.data?.error || 'Failed to initiate order. Try again.';
       toast.error(msg);
       setIsProcessing(false);
     }

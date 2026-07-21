@@ -38,9 +38,9 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   res.json({ order });
 }));
 
-// POST /api/orders - create order (called after payment verification)
+// POST /api/orders - create order before payment with stock validation & server pricing
 router.post('/', authenticate, asyncHandler(async (req, res) => {
-  const { addressId, items, totalAmount, razorpayOrderId, notes } = req.body;
+  const { addressId, items, notes } = req.body;
 
   if (!addressId || !items?.length) {
     return res.status(400).json({ error: 'addressId and items are required' });
@@ -51,31 +51,104 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
   });
   if (!address) return res.status(404).json({ error: 'Address not found' });
 
+  // 1. Stock validation & server-side price calculation
+  const productIds = items
+    .map((i) => i.productId)
+    .filter(Boolean);
+
+  const dbProducts = productIds.length > 0
+    ? await prisma.product.findMany({
+        where: { id: { in: productIds } }
+      })
+    : [];
+
+  let calculatedSubtotal = 0;
+  const processedItems = [];
+
+  for (const item of items) {
+    if (item.productId) {
+      const product = dbProducts.find((p) => p.id === item.productId);
+      if (!product || !product.isActive) {
+        return res.status(400).json({ error: `Product not available` });
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          error: `Insufficient stock for ${product.name}. Available: ${product.stock}g, requested: ${item.quantity}g`
+        });
+      }
+      const unitPrice = product.pricePerGram;
+      const totalPrice = unitPrice * item.quantity;
+      calculatedSubtotal += totalPrice;
+
+      processedItems.push({
+        productId: product.id,
+        blendName: null,
+        blendData: null,
+        quantity: item.quantity,
+        unitPrice,
+        totalPrice,
+      });
+    } else if (item.blendName || item.blendData) {
+      const totalPrice = item.totalPrice || item.unitPrice || 0;
+      calculatedSubtotal += totalPrice;
+      processedItems.push({
+        productId: null,
+        blendName: item.blendName || 'Custom Blend',
+        blendData: item.blendData || null,
+        quantity: item.quantity || 1,
+        unitPrice: item.unitPrice || totalPrice,
+        totalPrice,
+      });
+    }
+  }
+
+  const shipping = calculatedSubtotal >= 499 ? 0 : 60;
+  const verifiedTotal = calculatedSubtotal + shipping;
+
+  // 2. Create Razorpay order
+  let razorpayOrder = null;
+  if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    try {
+      const Razorpay = require('razorpay');
+      const rzp = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
+      });
+      razorpayOrder = await rzp.orders.create({
+        amount: Math.round(verifiedTotal * 100),
+        currency: 'INR',
+        receipt: `receipt_${Date.now().toString().slice(-8)}`,
+      });
+    } catch (err) {
+      console.error('Razorpay order creation error:', err);
+    }
+  }
+
+  // 3. Create DB order in PENDING status
   const order = await prisma.order.create({
     data: {
       userId: req.user.id,
       addressId,
-      totalAmount,
-      razorpayOrderId: razorpayOrderId || null,
+      totalAmount: verifiedTotal,
+      status: 'PENDING',
+      isPaid: false,
+      razorpayOrderId: razorpayOrder?.id || req.body.razorpayOrderId || null,
       notes,
       items: {
-        create: items.map((item) => ({
-          productId: item.productId || null,
-          blendName: item.blendName || null,
-          blendData: item.blendData || null,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
-        }))
+        create: processedItems,
       }
     },
     include: { items: true, address: true }
   });
 
-  // Clear cart after order created
+  // 4. Clear user cart in Redis
   await cartService.clearCart(req.user.id);
 
-  res.status(201).json({ order });
+  res.status(201).json({
+    order,
+    razorpayOrder,
+    keyId: process.env.RAZORPAY_KEY_ID,
+  });
 }));
 
 // DELETE /api/orders/:id/cancel — customer self-cancel (only pre-dispatch statuses)
