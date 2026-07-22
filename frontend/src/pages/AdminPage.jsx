@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiPackage, FiTrendingUp, FiUsers, FiDollarSign, FiPlus, FiEdit2, FiTrash2, FiUploadCloud, FiImage, FiX } from 'react-icons/fi';
 import { GiChiliPepper } from 'react-icons/gi';
-import { adminAPI, productAPI } from '../services/api';
+import { adminAPI, productAPI, shippingAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import SelectDropdown from '../components/SelectDropdown';
 
@@ -110,6 +110,16 @@ function AdminOrders() {
       return;
     }
     timelineMutation.mutate({ id: orderId, data: checkpointForm });
+  };
+
+  const handleSimulateDispatch = async (orderId) => {
+    try {
+      await shippingAPI.simulateDispatch(orderId);
+      toast.success('Automated dispatch and tracking checkpoints simulated');
+      queryClient.invalidateQueries(['admin-orders']);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to simulate dispatch');
+    }
   };
 
   let orders = data?.data?.orders || [];
@@ -235,7 +245,14 @@ function AdminOrders() {
                   <p className="text-xs text-bark-400">{order.items?.length || 0} items</p>
                 </div>
 
-                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => handleSimulateDispatch(order.id)}
+                    className="text-xs border border-spice-300 px-3 py-2 rounded-xl text-bark-700 hover:bg-spice-100 font-medium transition-colors"
+                    title="Simulate automated courier dispatch and tracking"
+                  >
+                    Auto-Dispatch
+                  </button>
                   <SelectDropdown
                     value={order.status}
                     onChange={(val) => handleStatusChange(order, val)}

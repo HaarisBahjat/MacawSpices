@@ -12,6 +12,7 @@ const wishlistRoutes = require('./routes/wishlist.routes');
 const orderRoutes = require('./routes/order.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const adminRoutes = require('./routes/admin.routes');
+const shippingRoutes = require('./routes/shipping.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -57,6 +58,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/shipping', shippingRoutes);
 
 // 404
 app.use((req, res) => {

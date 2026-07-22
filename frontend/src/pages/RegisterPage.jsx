@@ -9,11 +9,17 @@ import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register, loginWithGoogle, simulateGoogleDevLogin, isLoading } = useAuthStore();
+  const { register, loginWithGoogle, simulateGoogleDevLogin, isLoading, isAuthenticated } = useAuthStore();
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [showDevGoogle, setShowDevGoogle] = useState(false);
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleGoogleClick = async () => {
     setError('');

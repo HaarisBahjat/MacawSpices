@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '../store/useAuthStore';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -16,16 +17,32 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors globally — only redirect for protected endpoints,
-// NOT for cart endpoints (guests use cart locally)
+// Handle auth errors gracefully with automatic session refresh
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
-    const url = error.config?.url || '';
+  async (error) => {
+    const originalRequest = error.config;
+    const url = originalRequest?.url || '';
     const isCartEndpoint = url.startsWith('/cart');
-    if (error.response?.status === 401 && !isCartEndpoint) {
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isCartEndpoint) {
+      originalRequest._retry = true;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          localStorage.setItem('sw_token', session.access_token);
+          originalRequest.headers.Authorization = `Bearer ${session.access_token}`;
+          return api(originalRequest);
+        }
+      } catch (refreshErr) {
+        console.error('Failed to auto-refresh session:', refreshErr);
+      }
+
       localStorage.removeItem('sw_token');
-      window.location.href = '/login';
+      const isProtected = ['/orders', '/checkout', '/account', '/admin'].some((p) => url.startsWith(p));
+      if (isProtected) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -99,6 +116,12 @@ export const adminAPI = {
 
   createBlend: (data) => api.post('/admin/blends', data),
   createCategory: (data) => api.post('/admin/categories', data),
+};
+
+export const shippingAPI = {
+  simulateDispatch: (orderId) => api.post(`/shipping/simulate-dispatch/${orderId}`),
+  trackOrder: (orderId) => api.get(`/shipping/track/${orderId}`),
+  sendWebhookPayload: (payload) => api.post('/shipping/webhook', payload),
 };
 
 export default api;
