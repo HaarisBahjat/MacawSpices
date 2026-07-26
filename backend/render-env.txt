@@ -1,0 +1,30 @@
+# Server Configuration
+PORT=5000
+NODE_ENV=production
+FRONTEND_URL=https://macawspices.vercel.app
+
+# PostgreSQL Database (Supabase Pooler)
+DATABASE_URL="postgresql://postgres.pnniqtepwabuwetwkwgh:Haaris%40malick123@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.pnniqtepwabuwetwkwgh:Haaris%40malick123@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+
+# Supabase Auth
+SUPABASE_URL="https://pnniqtepwabuwetwkwgh.supabase.co"
+SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBubmlxdGVwd2FidXdldHdrd2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTkzODUsImV4cCI6MjA5NzM3NTM4NX0.1gIsfTW9htQ8iTvrsv3b_yhTKhTsPOe93naii4ch7J4"
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBubmlxdGVwd2FidXdldHdrd2doIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTc5OTM4NSwiZXhwIjoyMDk3Mzc1Mzg1fQ.XzWW8RS9W5DlueG3SNLW_YGh_8xB1nyBv1yzA-Hof4Q"
+JWT_SECRET="27ed5e9c-39a6-43b7-aa76-ea95e5d06e4b"
+
+# Upstash Redis Cache
+UPSTASH_REDIS_REST_URL="https://intent-flea-131540.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="gQAAAAAAAgHUAAIgcDJjYjhjMjIyZDVkYjY0MjMwYTIwMDE1ZmM4ZDFlNzZlOA"
+
+# Razorpay Payments
+RAZORPAY_KEY_ID="rzp_test_SxUmwYLfyONLWX"
+RAZORPAY_KEY_SECRET="T3XKJY2BWBBpJFMsBHswb3Zv"
+RAZORPAY_WEBHOOK_SECRET="your-webhook-secret"
+
+# Email Notifications (Optional)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+ADMIN_EMAIL="your-email@gmail.com"
