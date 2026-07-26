@@ -20,6 +20,11 @@ export default function CheckoutPage() {
   const [showNewAddr, setShowNewAddr] = useState(false);
   const [cartReady, setCartReady] = useState(false);
 
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+
   // Ensure cart is always loaded with fresh product data on checkout mount
   useEffect(() => {
     fetchCart().then(() => setCartReady(true));
@@ -32,8 +37,36 @@ export default function CheckoutPage() {
 
   const profile = profileData?.data?.user;
   const addresses = profile?.addresses || [];
-  const shipping = subtotal >= 499 ? 0 : 60;
-  const total = subtotal + shipping;
+  const discountAmount = appliedCoupon?.discountAmount || 0;
+  const isFreeShipping = appliedCoupon?.freeShipping || subtotal >= 499;
+  const shipping = isFreeShipping ? 0 : 60;
+  const total = Math.max(0, subtotal - discountAmount + shipping);
+
+  const handleApplyCoupon = async (e) => {
+    e.preventDefault();
+    if (!couponInput.trim()) return;
+    setCouponError('');
+    setCouponLoading(true);
+    try {
+      const res = await orderAPI.validateCoupon(couponInput.trim(), subtotal);
+      if (res.data?.coupon?.valid) {
+        setAppliedCoupon(res.data.coupon);
+        toast.success(`Coupon ${res.data.coupon.code} applied!`);
+      }
+    } catch (err) {
+      setCouponError(err.response?.data?.error || 'Invalid promo code');
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError('');
+    toast.success('Coupon removed');
+  };
 
   // Guard: redirect to cart if cart is empty after it's done loading
   if (cartReady && items.length === 0) {
@@ -61,14 +94,26 @@ export default function CheckoutPage() {
     );
   }
 
-  const handleAddAddress = async () => {
+  const handleAddAddress = async (e) => {
+    e.preventDefault();
+    if (!newAddress.line1 || !newAddress.city || !newAddress.state || !newAddress.pincode) {
+      toast.error('All address fields are required');
+      return;
+    }
+    const cleanPin = String(newAddress.pincode).trim();
+    if (!/^\d{6}$/.test(cleanPin)) {
+      toast.error('Pincode must be exactly 6 digits (e.g. 560001)');
+      return;
+    }
     try {
-      await authAPI.addAddress({ ...newAddress, isDefault: addresses.length === 0 });
-      await refetch();
-      setShowNewAddr(false);
+      const res = await authAPI.addAddress({ ...newAddress, pincode: cleanPin });
       toast.success('Address saved!');
-    } catch {
-      toast.error('Failed to save address');
+      setSelectedAddress(res.data.address.id);
+      setShowNewAddr(false);
+      setNewAddress({ label: 'Home', line1: '', line2: '', city: '', state: '', pincode: '' });
+      refetch();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to add address');
     }
   };
 
@@ -110,6 +155,7 @@ export default function CheckoutPage() {
       // Step 1: Create DB order (with stock validation & server pricing) + pre-create Razorpay order
       const orderRes = await orderAPI.create({
         addressId: selectedAddress,
+        couponCode: appliedCoupon?.code,
         items: items.map((item) => ({
           productId: item.type === 'product' ? item.productId : null,
           blendName: item.type === 'blend' ? (item.blendData?.blendName || 'Custom Blend') : null,
@@ -378,13 +424,61 @@ export default function CheckoutPage() {
           {/* Order Summary Sidebar */}
           <div className="card p-6 h-fit sticky top-24">
             <h3 className="font-semibold text-bark-900 mb-3">Order Summary</h3>
+
+            {/* Coupon / Promo Code Field */}
+            <div className="mb-4 pt-1 pb-3 border-b border-spice-200">
+              <label className="block text-xs font-bold uppercase tracking-wider text-bark-500 mb-1.5">
+                Promo / Coupon Code
+              </label>
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-2.5">
+                  <div>
+                    <span className="text-xs font-bold text-green-700 block">{appliedCoupon.code}</span>
+                    <span className="text-[11px] text-green-600">{appliedCoupon.description}</span>
+                  </div>
+                  <button
+                    onClick={handleRemoveCoupon}
+                    className="text-xs text-red-600 hover:text-red-800 font-semibold cursor-pointer ml-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder="e.g. WELCOME10"
+                    className="flex-1 rounded-lg border border-spice-300 bg-white px-3 py-1.5 text-xs text-bark-900 focus:outline-none focus:ring-1 focus:ring-chilli-600"
+                  />
+                  <button
+                    type="submit"
+                    disabled={couponLoading || !couponInput.trim()}
+                    className="px-3 py-1.5 bg-chilli-600 hover:bg-chilli-700 text-white rounded-lg text-xs font-bold disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    {couponLoading ? '...' : 'Apply'}
+                  </button>
+                </form>
+              )}
+              {couponError && <p className="text-[11px] text-red-500 mt-1">{couponError}</p>}
+            </div>
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-bark-600">
                 <span>Subtotal</span><span>₹{subtotal.toFixed(0)}</span>
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <span>Discount ({appliedCoupon?.code})</span>
+                  <span>- ₹{discountAmount.toFixed(0)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-bark-600">
                 <span>Shipping</span>
-                <span className={shipping === 0 ? 'text-green-600 font-medium' : ''}>{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
+                <span className={shipping === 0 ? 'text-green-600 font-medium' : ''}>
+                  {shipping === 0 ? 'FREE' : `₹${shipping}`}
+                </span>
               </div>
               <div className="border-t border-spice-200 pt-2 flex justify-between font-bold text-bark-900">
                 <span>Total</span><span>₹{total.toFixed(0)}</span>

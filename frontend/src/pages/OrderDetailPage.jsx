@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { orderAPI } from '../services/api';
+import { orderAPI, productAPI } from '../services/api';
 
 // ── Status configuration ──────────────────────────────────────────────────
 const STATUS_STEPS = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
@@ -125,6 +125,14 @@ function LiveBadge({ lastUpdated }) {
 }
 
 // ── Print Invoice ─────────────────────────────────────────────────────────
+function formatQuantity(qty) {
+  const num = Number(qty);
+  if (isNaN(num) || !Number.isFinite(num) || num > 100000) {
+    return '1g';
+  }
+  return Number.isInteger(num) ? `${num}g` : `${num.toFixed(1)}g`;
+}
+
 function printInvoice(order) {
   const shortId = order.id?.slice(-8).toUpperCase();
   const shipping = order.totalAmount >= 499 ? 0 : 60;
@@ -135,9 +143,9 @@ function printInvoice(order) {
       <td style="padding:10px 8px;border-bottom:1px solid #eee;font-size:13px;">
         ${item.product?.name || item.blendName || 'Bespoke Blend'}
       </td>
-      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;">${item.quantity}g</td>
-      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;">₹${item.unitPrice?.toFixed(2)}/g</td>
-      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;font-weight:600;">₹${item.totalPrice?.toFixed(2)}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;">${formatQuantity(item.quantity)}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;">₹${(item.unitPrice || 0).toFixed(2)}/g</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;font-size:13px;font-weight:600;">₹${(item.totalPrice || 0).toFixed(2)}</td>
     </tr>
   `).join('');
 
@@ -245,6 +253,108 @@ function printInvoice(order) {
   } else {
     toast.error('Please allow pop-ups for invoice printing.');
   }
+}
+
+// ── Post-Purchase Product Review Component ─────────────────────────────────
+function ProductReviewWidget({ productId, productName }) {
+  const [rating, setRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  if (!productId) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await productAPI.addReview(productId, { rating, comment });
+      toast.success(`Review for ${productName || 'product'} submitted!`);
+      setIsSubmitted(true);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to submit review');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isSubmitted) {
+    return (
+      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-3 text-xs font-semibold flex items-center justify-between mt-3">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px]">check_circle</span>
+          <span>Thank you! Your {rating} ★ review & description have been recorded.</span>
+        </div>
+        <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-800 text-white px-2 py-0.5 rounded">
+          Submitted
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 bg-surface-container-low p-4 rounded-xl border border-outline-variant/40 space-y-3">
+      <div className="flex justify-between items-center flex-wrap gap-2">
+        <span className="text-xs font-bold uppercase tracking-wider text-on-surface flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-amber-500 text-[18px]">rate_review</span>
+          Rate & Review {productName}
+        </span>
+        <span className="text-xs font-bold text-emerald-800">
+          {['', '1 - Poor', '2 - Average', '3 - Good', '4 - Very Good', '5 - Excellent'][(hoverRating || rating)]}
+        </span>
+      </div>
+
+      {/* 5-Star Selector */}
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const active = star <= (hoverRating || rating);
+          return (
+            <button
+              key={star}
+              type="button"
+              onClick={() => setRating(star)}
+              onMouseEnter={() => setHoverRating(star)}
+              onMouseLeave={() => setHoverRating(0)}
+              className="p-1 focus:outline-none transition-transform hover:scale-125 cursor-pointer"
+            >
+              <span
+                className={`material-symbols-outlined text-[24px] transition-colors ${
+                  active ? 'text-amber-500' : 'text-outline-variant'
+                }`}
+                style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+              >
+                star
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Description Writing Block */}
+      <div>
+        <textarea
+          rows={2}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Write your review / description notes here..."
+          className="w-full bg-surface border border-outline-variant/50 rounded-lg p-2.5 text-xs text-on-surface focus:ring-2 focus:ring-primary outline-none transition-all resize-none"
+        />
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="bg-primary text-on-primary px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-[16px]">send</span>
+          {isSubmitting ? 'Submitting...' : 'Submit Review'}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 // ── Cancel Order Modal ────────────────────────────────────────────────────
@@ -806,23 +916,33 @@ export default function OrderDetailPage() {
 
               <div className="divide-y divide-outline-variant/30">
                 {order.items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-                    <div className="w-14 h-14 bg-surface-container-low rounded-lg overflow-hidden shrink-0 border border-outline-variant/40 flex items-center justify-center">
-                      {item.product?.images?.[0] ? (
-                        <img src={item.product.images[0]} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="material-symbols-outlined text-primary text-[24px]">energy_savings_leaf</span>
-                      )}
+                  <div key={item.id} className="py-4 first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-surface-container-low rounded-lg overflow-hidden shrink-0 border border-outline-variant/40 flex items-center justify-center">
+                        {item.product?.images?.[0] ? (
+                          <img src={item.product.images[0]} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-primary text-[24px]">energy_savings_leaf</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-serif font-bold text-on-surface text-base truncate">
+                          {item.product?.name || item.blendName || 'Bespoke Craft Blend'}
+                        </p>
+                        <p className="text-xs text-outline font-medium mt-0.5">
+                          {item.quantity}g jar reserve · ₹{item.unitPrice}/g
+                        </p>
+                      </div>
+                      <p className="font-sans font-bold text-primary text-base shrink-0">₹{item.totalPrice.toFixed(0)}</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-serif font-bold text-on-surface text-base truncate">
-                        {item.product?.name || item.blendName || 'Bespoke Craft Blend'}
-                      </p>
-                      <p className="text-xs text-outline font-medium mt-0.5">
-                        {item.quantity}g jar reserve · ₹{item.unitPrice}/g
-                      </p>
-                    </div>
-                    <p className="font-sans font-bold text-primary text-base shrink-0">₹{item.totalPrice.toFixed(0)}</p>
+
+                    {/* 5-Star Rating & Description Review Widget */}
+                    {(item.productId || item.product?.id) && (
+                      <ProductReviewWidget
+                        productId={item.productId || item.product?.id}
+                        productName={item.product?.name || item.blendName}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

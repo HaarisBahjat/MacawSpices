@@ -58,25 +58,28 @@ export default function FestivePopup() {
             </button>
             
             <div className="p-10 relative z-10">
-              <h2 className="text-5xl font-display font-bold text-white mb-4 drop-shadow-lg">
-                Festive Season <br /> <span className="text-spice-400">Special!</span>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-spice-400 mb-2 block">
+                Exclusive Welcome Benefit
+              </span>
+              <h2 className="text-4xl sm:text-5xl font-display font-bold text-white mb-4 drop-shadow-lg">
+                Welcome Offer <br /> <span className="text-spice-400">10% OFF</span>
               </h2>
-              <p className="text-lg text-white/90 mb-8 font-medium drop-shadow-md">
-                Get an exclusive 20% OFF on all premium spices and custom blends. Let the aroma of joy fill your home!
+              <p className="text-sm sm:text-base text-white/90 mb-8 font-medium drop-shadow-md max-w-md mx-auto">
+                Enjoy 10% OFF on your first order of estate-fresh spices and custom botanical blends. Single use per account.
               </p>
               
-              <div className="bg-black/30 backdrop-blur-sm rounded-xl py-4 px-6 inline-block mb-8 border border-white/10 shadow-inner">
-                <p className="text-sm text-white/80 uppercase tracking-widest mb-1">Use Code</p>
-                <p className="text-4xl font-bold tracking-widest text-spice-400 drop-shadow-md">FESTIVE20</p>
+              <div className="bg-black/40 backdrop-blur-md rounded-2xl py-4 px-6 inline-block mb-8 border border-white/20 shadow-inner">
+                <p className="text-xs text-white/70 uppercase tracking-widest mb-1 font-bold">Use Promo Code</p>
+                <p className="text-3xl sm:text-4xl font-mono font-bold tracking-widest text-spice-400 drop-shadow-md">WELCOME10</p>
               </div>
 
               <div className="flex justify-center">
                 <Link
                   to="/products"
                   onClick={() => setIsOpen(false)}
-                  className="px-8 py-4 bg-chilli-600 hover:bg-chilli-500 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all hover:scale-105"
+                  className="px-8 py-4 bg-chilli-600 hover:bg-chilli-500 text-white rounded-xl font-bold text-base shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all hover:scale-105"
                 >
-                  Shop Now
+                  Explore Catalog
                 </Link>
               </div>
             </div>

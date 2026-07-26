@@ -34,6 +34,15 @@ router.put('/profile', authenticate, asyncHandler(async (req, res) => {
 router.post('/addresses', authenticate, asyncHandler(async (req, res) => {
   const { label, line1, line2, city, state, pincode, isDefault } = req.body;
 
+  if (!line1 || !city || !state || !pincode) {
+    return res.status(400).json({ error: 'line1, city, state, and pincode are required' });
+  }
+
+  const cleanPincode = String(pincode).trim();
+  if (!/^\d{6}$/.test(cleanPincode)) {
+    return res.status(400).json({ error: 'Pincode must be exactly 6 digits (e.g. 560001)' });
+  }
+
   if (isDefault) {
     await prisma.address.updateMany({
       where: { userId: req.user.id },
@@ -42,7 +51,7 @@ router.post('/addresses', authenticate, asyncHandler(async (req, res) => {
   }
 
   const address = await prisma.address.create({
-    data: { userId: req.user.id, label, line1, line2, city, state, pincode, isDefault: isDefault || false }
+    data: { userId: req.user.id, label, line1, line2, city, state, pincode: cleanPincode, isDefault: isDefault || false }
   });
   res.status(201).json({ address });
 }));

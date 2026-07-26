@@ -73,6 +73,11 @@ model Product {
   blendItems    BlendItem[]
   orderItems    OrderItem[]
   wishlistItems WishlistItem[]
+
+  @@index([categoryId, isActive])
+  @@index([isActive, featured])
+  @@index([pricePerGram])
+  @@index([createdAt])
 }
 
 model BlendTemplate {
@@ -108,6 +113,8 @@ model SavedBlend {
 
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   blendTemplate   BlendTemplate @relation(fields: [blendTemplateId], references: [id])
+
+  @@index([userId])
 }
 
 model Address {
@@ -123,6 +130,8 @@ model Address {
 
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders    Order[]
+
+  @@index([userId])
 }
 
 model Order {
@@ -131,6 +140,8 @@ model Order {
   addressId           String
   status              OrderStatus @default(PENDING)
   totalAmount         Float
+  discountAmount      Float       @default(0)
+  couponCode          String?
   razorpayOrderId     String?     @unique
   razorpayPaymentId   String?
   razorpaySignature   String?
@@ -148,6 +159,10 @@ model Order {
   address         Address              @relation(fields: [addressId], references: [id])
   items           OrderItem[]
   timelineEvents  OrderTimelineEvent[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, isPaid])
+  @@index([createdAt(sort: Desc)])
 }
 
 model OrderItem {
@@ -162,6 +177,9 @@ model OrderItem {
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model OrderTimelineEvent {
@@ -174,6 +192,8 @@ model OrderTimelineEvent {
   createdAt   DateTime @default(now())
 
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt(sort: Desc)])
 }
 
 model Review {
@@ -187,6 +207,7 @@ model Review {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
 
+  @@index([productId])
   @@unique([userId, productId])
 }
 

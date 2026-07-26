@@ -56,12 +56,16 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
     prisma.product.count({ where }),
   ]);
 
-  const productsWithRating = products.map((p) => ({
-    ...p,
-    avgRating: p.reviews.length
-      ? p.reviews.reduce((acc, r) => acc + r.rating, 0) / p.reviews.length
-      : 0,
-  }));
+  const productsWithRating = products.map((p) => {
+    const total = p.reviews.length;
+    const sum = p.reviews.reduce((acc, r) => acc + r.rating, 0);
+    const avg = total > 0 ? Math.round((sum / total) * 10) / 10 : 0;
+    return {
+      ...p,
+      avgRating: avg,
+      reviewCount: p._count?.reviews || total,
+    };
+  });
 
   res.json({
     products: productsWithRating,
@@ -86,7 +90,6 @@ router.get('/:slug', asyncHandler(async (req, res) => {
       reviews: {
         include: { user: { select: { name: true, avatarUrl: true } } },
         orderBy: { createdAt: 'desc' },
-        take: 10,
       },
       _count: { select: { reviews: true } },
     },
@@ -94,11 +97,26 @@ router.get('/:slug', asyncHandler(async (req, res) => {
 
   if (!product) return res.status(404).json({ error: 'Product not found' });
 
-  const avgRating = product.reviews.length
-    ? product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length
-    : 0;
+  const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  let totalRatingSum = 0;
+  product.reviews.forEach((r) => {
+    totalRatingSum += r.rating;
+    if (ratingCounts[r.rating] !== undefined) {
+      ratingCounts[r.rating]++;
+    }
+  });
 
-  res.json({ product: { ...product, avgRating } });
+  const reviewCount = product.reviews.length;
+  const avgRating = reviewCount > 0 ? Math.round((totalRatingSum / reviewCount) * 10) / 10 : 0;
+
+  res.json({
+    product: {
+      ...product,
+      avgRating,
+      reviewCount,
+      ratingCounts,
+    }
+  });
 }));
 
 // POST /api/products/:id/reviews - add or update product review

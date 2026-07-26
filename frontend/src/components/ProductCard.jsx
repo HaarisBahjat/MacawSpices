@@ -4,6 +4,7 @@ import useCartStore from '../store/useCartStore';
 import useWishlistStore from '../store/useWishlistStore';
 
 export default function ProductCard({ product }) {
+  if (!product) return null;
   const { addItem } = useCartStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   
@@ -61,17 +62,31 @@ export default function ProductCard({ product }) {
         </div>
 
         <div className="flex justify-between items-start gap-2">
-          <div>
+          <div className="flex-1 min-w-0">
             {product.category?.name && (
-              <p className="text-[10px] uppercase tracking-wider text-outline font-semibold mb-1">
+              <p className="text-[10px] uppercase tracking-wider text-outline font-semibold mb-1 truncate">
                 {product.category.name}
               </p>
             )}
             <h4 className="font-serif text-lg font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-1">
               {product.name}
             </h4>
+
+            {/* Star Rating Badge & Count (Myntra Style) */}
+            <div className="flex items-center gap-1.5 mt-1">
+              <div className="inline-flex items-center gap-0.5 bg-emerald-800 text-white text-[11px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                <span>{(product.avgRating || 0) > 0 ? (product.avgRating).toFixed(1) : '5.0'}</span>
+                <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  star
+                </span>
+              </div>
+              <span className="text-[11px] text-outline font-medium">
+                ({product.reviewCount || product.reviews?.length || 0})
+              </span>
+            </div>
+
             {product.flavorProfile && (
-              <p className="text-xs text-on-surface-variant/80 mt-0.5 line-clamp-1">
+              <p className="text-xs text-on-surface-variant/80 mt-1 line-clamp-1">
                 {product.flavorProfile}
               </p>
             )}

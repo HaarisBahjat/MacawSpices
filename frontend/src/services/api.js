@@ -85,6 +85,7 @@ export const orderAPI = {
   create: (data) => api.post('/orders', data),
   cancel: (id) => api.delete(`/orders/${id}/cancel`),
   requestReturn: (id, data) => api.post(`/orders/${id}/return`, data),
+  validateCoupon: (couponCode, subtotal) => api.post('/orders/validate-coupon', { couponCode, subtotal }),
 };
 
 export const paymentAPI = {

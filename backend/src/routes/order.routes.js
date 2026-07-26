@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
 const { asyncHandler } = require('../middleware/error.middleware');
+const { idempotencyMiddleware } = require('../middleware/idempotency.middleware');
 const { prisma } = require('../lib/prisma');
 const { cartService } = require('../lib/redis');
 
@@ -38,9 +39,103 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   res.json({ order });
 }));
 
+const AVAILABLE_COUPONS = {
+  WELCOME10: {
+    code: 'WELCOME10',
+    type: 'PERCENTAGE',
+    value: 10,
+    maxDiscount: 200,
+    minOrderAmount: 0,
+    description: '10% OFF on your first order (Max Rs 200)'
+  },
+  SPICE50: {
+    code: 'SPICE50',
+    type: 'FLAT',
+    value: 50,
+    minOrderAmount: 499,
+    description: 'Flat Rs 50 OFF on orders above Rs 499'
+  },
+  FREESHIP: {
+    code: 'FREESHIP',
+    type: 'FREESHIP',
+    minOrderAmount: 199,
+    description: 'Free Delivery on orders above Rs 199'
+  }
+};
+
+async function calculateCouponDiscount(couponCode, subtotal, userId) {
+  if (!couponCode) return { valid: false, discountAmount: 0, freeShipping: false };
+  const normalized = String(couponCode).trim().toUpperCase();
+  const coupon = AVAILABLE_COUPONS[normalized];
+  if (!coupon) {
+    return { valid: false, error: 'Invalid coupon code' };
+  }
+
+  // Once-in-a-lifetime restriction for WELCOME10 per user account
+  if (normalized === 'WELCOME10' && userId) {
+    try {
+      const existingUsage = await prisma.$queryRaw`
+        SELECT id FROM "Order" 
+        WHERE "userId" = ${userId} 
+          AND "couponCode" = 'WELCOME10' 
+          AND "status" != 'CANCELLED' 
+        LIMIT 1
+      `;
+      if (existingUsage && existingUsage.length > 0) {
+        return {
+          valid: false,
+          error: 'Coupon WELCOME10 is a once-in-a-lifetime offer and has already been redeemed on your account.',
+        };
+      }
+    } catch (e) {
+      console.error('[Coupon Check] raw query error:', e.message);
+    }
+  }
+
+  if (subtotal < coupon.minOrderAmount) {
+    return {
+      valid: false,
+      error: `Coupon ${coupon.code} requires a minimum order of Rs ${coupon.minOrderAmount}`
+    };
+  }
+
+  let discountAmount = 0;
+  let freeShipping = false;
+
+  if (coupon.type === 'PERCENTAGE') {
+    discountAmount = Math.min((subtotal * coupon.value) / 100, coupon.maxDiscount || Infinity);
+  } else if (coupon.type === 'FLAT') {
+    discountAmount = Math.min(coupon.value, subtotal);
+  } else if (coupon.type === 'FREESHIP') {
+    freeShipping = true;
+  }
+
+  return {
+    valid: true,
+    code: coupon.code,
+    type: coupon.type,
+    discountAmount: Math.round(discountAmount * 100) / 100,
+    freeShipping,
+    description: coupon.description,
+  };
+}
+
+// POST /api/orders/validate-coupon - validate coupon promo code
+router.post('/validate-coupon', authenticate, asyncHandler(async (req, res) => {
+  const { couponCode, subtotal } = req.body;
+  if (!couponCode) {
+    return res.status(400).json({ error: 'Coupon code is required' });
+  }
+  const result = await calculateCouponDiscount(couponCode, Number(subtotal) || 0, req.user?.id);
+  if (!result.valid) {
+    return res.status(400).json({ error: result.error || 'Invalid coupon code' });
+  }
+  res.json({ coupon: result });
+}));
+
 // POST /api/orders - create order before payment with stock validation & server pricing
-router.post('/', authenticate, asyncHandler(async (req, res) => {
-  const { addressId, items, notes } = req.body;
+router.post('/', authenticate, idempotencyMiddleware(60), asyncHandler(async (req, res) => {
+  const { addressId, items, notes, couponCode } = req.body;
 
   if (!addressId || !items?.length) {
     return res.status(400).json({ error: 'addressId and items are required' });
@@ -71,41 +166,60 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
       if (!product || !product.isActive) {
         return res.status(400).json({ error: `Product not available` });
       }
-      if (product.stock < item.quantity) {
+      const rawQty = parseFloat(item.quantity);
+      const safeQuantity = (isNaN(rawQty) || !Number.isFinite(rawQty) || rawQty <= 0 || rawQty > 100000) ? 50 : rawQty;
+
+      if (product.stock < safeQuantity) {
         return res.status(400).json({
-          error: `Insufficient stock for ${product.name}. Available: ${product.stock}g, requested: ${item.quantity}g`
+          error: `Insufficient stock for ${product.name}. Available: ${product.stock}g, requested: ${safeQuantity}g`
         });
       }
       const unitPrice = product.pricePerGram;
-      const totalPrice = unitPrice * item.quantity;
+      const totalPrice = unitPrice * safeQuantity;
       calculatedSubtotal += totalPrice;
 
       processedItems.push({
         productId: product.id,
         blendName: null,
         blendData: null,
-        quantity: item.quantity,
+        quantity: safeQuantity,
         unitPrice,
         totalPrice,
       });
     } else if (item.blendName || item.blendData) {
+      const rawQty = parseFloat(item.quantity);
+      const safeQuantity = (isNaN(rawQty) || !Number.isFinite(rawQty) || rawQty <= 0 || rawQty > 100000) ? 1 : rawQty;
       const totalPrice = item.totalPrice || item.unitPrice || 0;
       calculatedSubtotal += totalPrice;
       processedItems.push({
         productId: null,
         blendName: item.blendName || 'Custom Blend',
         blendData: item.blendData || null,
-        quantity: item.quantity || 1,
+        quantity: safeQuantity,
         unitPrice: item.unitPrice || totalPrice,
         totalPrice,
       });
     }
   }
 
-  const shipping = calculatedSubtotal >= 499 ? 0 : 60;
-  const verifiedTotal = calculatedSubtotal + shipping;
+  // 2. Server-side Coupon Verification
+  let discountAmount = 0;
+  let isFreeShipping = false;
+  let appliedCoupon = null;
 
-  // 2. Create Razorpay order
+  if (couponCode) {
+    const couponResult = await calculateCouponDiscount(couponCode, calculatedSubtotal, req.user.id);
+    if (couponResult.valid) {
+      discountAmount = couponResult.discountAmount;
+      isFreeShipping = couponResult.freeShipping;
+      appliedCoupon = couponResult.code;
+    }
+  }
+
+  const shipping = isFreeShipping || calculatedSubtotal >= 499 ? 0 : 60;
+  const verifiedTotal = Math.max(0, calculatedSubtotal - discountAmount + shipping);
+
+  // 3. Create Razorpay order
   let razorpayOrder = null;
   if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
     try {
@@ -124,12 +238,14 @@ router.post('/', authenticate, asyncHandler(async (req, res) => {
     }
   }
 
-  // 3. Create DB order in PENDING status
+  // 4. Create DB order in PENDING status
   const order = await prisma.order.create({
     data: {
       userId: req.user.id,
       addressId,
       totalAmount: verifiedTotal,
+      discountAmount,
+      couponCode: appliedCoupon,
       status: 'PENDING',
       isPaid: false,
       razorpayOrderId: razorpayOrder?.id || req.body.razorpayOrderId || null,

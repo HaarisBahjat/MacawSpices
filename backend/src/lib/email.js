@@ -39,12 +39,18 @@ const sendInvoiceEmail = async (order) => {
     day: 'numeric', month: 'long', year: 'numeric',
   });
 
+  const formatQty = (qty) => {
+    const num = Number(qty);
+    if (isNaN(num) || !Number.isFinite(num) || num > 100000) return '1g';
+    return Number.isInteger(num) ? `${num}g` : `${num.toFixed(1)}g`;
+  };
+
   const itemRows = items.map((item) => `
     <tr>
       <td style="padding:12px 8px;border-bottom:1px solid #f0ede8;font-size:13px;color:#1a1a1a;">
         ${item.blendName || item.product?.name || 'Custom Botanical Blend'}
       </td>
-      <td style="padding:12px 8px;border-bottom:1px solid #f0ede8;text-align:center;font-size:13px;color:#555;">${item.quantity}g</td>
+      <td style="padding:12px 8px;border-bottom:1px solid #f0ede8;text-align:center;font-size:13px;color:#555;">${formatQty(item.quantity)}</td>
       <td style="padding:12px 8px;border-bottom:1px solid #f0ede8;text-align:right;font-size:13px;color:#555;">
         Rs.${(item.unitPrice || (item.quantity ? item.totalPrice / item.quantity : 0)).toFixed(2)}/g
       </td>

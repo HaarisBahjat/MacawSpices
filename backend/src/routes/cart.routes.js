@@ -17,18 +17,21 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
 
     const products = productIds.length > 0
       ? await prisma.product.findMany({
-          where: { id: { in: productIds } },
-          select: { id: true, name: true, slug: true, pricePerGram: true, images: true, stock: true }
+          where: { id: { in: productIds }, isActive: true },
+          select: { id: true, name: true, slug: true, pricePerGram: true, images: true, stock: true, isActive: true }
         })
       : [];
 
-    cart.items = cart.items.map((item) => {
-      if (item.type === 'product') {
-        const product = products.find((p) => p.id === item.productId);
-        return { ...item, product };
-      }
-      return item;
-    });
+    cart.items = cart.items
+      .map((item) => {
+        if (item.type === 'product') {
+          const product = products.find((p) => p.id === item.productId);
+          if (!product) return null;
+          return { ...item, product };
+        }
+        return item;
+      })
+      .filter(Boolean);
   }
 
   const subtotal = cart.items.reduce((acc, item) => {

@@ -4,6 +4,7 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { authenticate } = require('../middleware/auth.middleware');
 const { asyncHandler } = require('../middleware/error.middleware');
+const { idempotencyMiddleware } = require('../middleware/idempotency.middleware');
 const { prisma } = require('../lib/prisma');
 const { sendOrderConfirmation, sendInvoiceEmail } = require('../lib/email');
 
@@ -38,7 +39,7 @@ router.post('/create-order', authenticate, asyncHandler(async (req, res) => {
 }));
 
 // POST /api/payments/verify - verify payment signature
-router.post('/verify', authenticate, asyncHandler(async (req, res) => {
+router.post('/verify', authenticate, idempotencyMiddleware(60), asyncHandler(async (req, res) => {
   const {
     razorpay_order_id,
     razorpay_payment_id,

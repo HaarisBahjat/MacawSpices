@@ -4,6 +4,7 @@ const { requireAdmin } = require('../middleware/auth.middleware');
 const { asyncHandler } = require('../middleware/error.middleware');
 const { prisma } = require('../lib/prisma');
 const { sendShippingNotification } = require('../lib/email');
+const { clearCacheByPattern } = require('../middleware/cache.middleware');
 
 // All admin routes require admin role
 router.use(requireAdmin);
@@ -25,6 +26,7 @@ router.post('/products', asyncHandler(async (req, res) => {
   const product = await prisma.product.create({
     data: { name, slug, description, categoryId, pricePerGram, stock, minOrderGram, images: images || [], featured: featured || false, flavorProfile, origin }
   });
+  await clearCacheByPattern('cache:*');
   res.status(201).json({ product });
 }));
 
@@ -34,6 +36,7 @@ router.put('/products/:id', asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     data: req.body
   });
+  await clearCacheByPattern('cache:*');
   res.json({ product });
 }));
 
@@ -43,6 +46,7 @@ router.delete('/products/:id', asyncHandler(async (req, res) => {
     where: { id: req.params.id },
     data: { isActive: false }
   });
+  await clearCacheByPattern('cache:*');
   res.json({ message: 'Product deactivated' });
 }));
 
@@ -124,6 +128,15 @@ router.put('/orders/:id/status', asyncHandler(async (req, res) => {
   }
 
   const order = await prisma.$transaction(async (tx) => {
+    const existingOrder = await tx.order.findUnique({
+      where: { id: req.params.id },
+      include: { items: true }
+    });
+
+    if (!existingOrder) {
+      throw new Error('Order not found');
+    }
+
     const updated = await tx.order.update({
       where: { id: req.params.id },
       data: updateData,
@@ -133,6 +146,19 @@ router.put('/orders/:id/status', asyncHandler(async (req, res) => {
         items: { include: { product: { select: { name: true } } } }
       }
     });
+
+    // Restore product stock if admin cancels order and it wasn't already cancelled
+    if (status === 'CANCELLED' && existingOrder.status !== 'CANCELLED') {
+      for (const item of existingOrder.items) {
+        if (item.productId) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } }
+          });
+        }
+      }
+    }
+
     // Auto-log timeline event for each admin status change
     const STATUS_LABELS = {
       CONFIRMED: 'Order Confirmed by Admin',

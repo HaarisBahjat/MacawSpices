@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
 const authRoutes = require('./routes/auth.routes');
@@ -14,8 +15,12 @@ const paymentRoutes = require('./routes/payment.routes');
 const adminRoutes = require('./routes/admin.routes');
 const shippingRoutes = require('./routes/shipping.routes');
 const { errorHandler } = require('./middleware/error.middleware');
+const { cacheMiddleware } = require('./middleware/cache.middleware');
 
 const app = express();
+
+// Payload Compression (Gzip / Brotli)
+app.use(compression());
 
 // Security
 app.use(helmet());
@@ -29,7 +34,7 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: 300,
   message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api', limiter);
@@ -49,10 +54,10 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Routes
+// Routes with Redis catalog response caching (300s TTL)
 app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/blends', blendRoutes);
+app.use('/api/products', cacheMiddleware(300), productRoutes);
+app.use('/api/blends', cacheMiddleware(300), blendRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
