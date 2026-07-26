@@ -63,7 +63,7 @@ function ProductReviewWidget({ productId, productName }) {
     setIsSubmitting(true);
     try {
       await productAPI.addReview(productId, { rating, comment });
-      toast.success(`Review for ${productName || 'product'} submitted!`);
+      toast.success(`Impression for ${productName || 'product'} recorded!`);
       setIsSubmitted(true);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to submit review');
@@ -74,32 +74,32 @@ function ProductReviewWidget({ productId, productName }) {
 
   if (isSubmitted) {
     return (
-      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-3.5 text-xs font-semibold flex items-center justify-between mt-3">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px]">check_circle</span>
-          <span>Thank you! Your {rating} ★ review & description have been recorded.</span>
+      <div className="bg-emerald-950/90 border border-emerald-500/40 text-emerald-200 rounded-2xl p-4 text-xs font-semibold flex items-center justify-between mt-4 shadow-sm backdrop-blur-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="material-symbols-outlined text-[20px] text-amber-400">task_alt</span>
+          <span>Thank you! Your {rating}.0 ★ impression & notes have been recorded.</span>
         </div>
-        <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-800 text-white px-2 py-0.5 rounded">
-          Submitted
+        <span className="text-[10px] uppercase font-bold tracking-widest bg-amber-400 text-black px-2.5 py-1 rounded-full shadow-xs">
+          Recorded
         </span>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 bg-surface-container-low p-4 rounded-xl border border-outline-variant/40 space-y-3">
-      <div className="flex justify-between items-center flex-wrap gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-on-surface flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-amber-500 text-[18px]">rate_review</span>
+    <div className="mt-4 bg-gradient-to-br from-surface-container-low to-surface-container/60 p-5 sm:p-6 rounded-2xl border border-outline-variant/60 shadow-md space-y-4">
+      <div className="flex justify-between items-center flex-wrap gap-2 border-b border-outline-variant/30 pb-3">
+        <span className="text-xs font-bold uppercase tracking-[0.15em] text-primary flex items-center gap-2">
+          <span className="material-symbols-outlined text-amber-500 text-[20px]">rate_review</span>
           Rate & Review {productName}
         </span>
-        <span className="text-xs font-bold text-emerald-800">
-          {['', '1 - Poor', '2 - Average', '3 - Good', '4 - Very Good', '5 - Excellent'][(hoverRating || rating)]}
+        <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+          {['', '1.0 — Poor', '2.0 — Average', '3.0 — Good', '4.0 — Very Fine', '5.0 — Exceptional'][(hoverRating || rating)]}
         </span>
       </div>
 
-      {/* 5-Star Selector */}
-      <div className="flex items-center gap-1">
+      {/* 5-Star Glow Selector */}
+      <div className="flex items-center justify-center gap-2 py-1">
         {[1, 2, 3, 4, 5].map((star) => {
           const active = star <= (hoverRating || rating);
           return (
@@ -112,8 +112,8 @@ function ProductReviewWidget({ productId, productName }) {
               className="p-1 focus:outline-none transition-transform hover:scale-125 cursor-pointer"
             >
               <span
-                className={`material-symbols-outlined text-[24px] transition-colors ${
-                  active ? 'text-amber-500' : 'text-outline-variant'
+                className={`material-symbols-outlined text-[28px] sm:text-[32px] transition-all ${
+                  active ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : 'text-outline-variant/60'
                 }`}
                 style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
               >
@@ -130,20 +130,20 @@ function ProductReviewWidget({ productId, productName }) {
           rows={2}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Write your review / description notes here..."
-          className="w-full bg-surface border border-outline-variant/50 rounded-lg p-2.5 text-xs text-on-surface focus:ring-2 focus:ring-primary outline-none transition-all resize-none"
+          placeholder="Write your tasting notes, aroma intensity, or culinary results here..."
+          className="w-full bg-surface border border-outline-variant/60 rounded-xl p-3 text-xs sm:text-sm text-on-surface focus:ring-2 focus:ring-primary outline-none transition-all resize-none shadow-inner leading-relaxed"
         />
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-1">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="bg-primary text-on-primary px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+          className="bg-gradient-to-r from-primary via-emerald-800 to-primary text-on-primary px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-[0.2em] hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 cursor-pointer shadow-xs border border-emerald-400/30 disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[16px]">send</span>
-          {isSubmitting ? 'Submitting...' : 'Submit Review'}
+          {isSubmitting ? 'Submitting...' : 'Submit Product Review'}
         </button>
       </div>
     </div>

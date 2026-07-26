@@ -164,7 +164,7 @@ const useCartStore = create(
       },
 
       get totalItems() {
-        return get().items.reduce((acc, item) => acc + (item.quantity || 1), 0);
+        return get().items.length;
       },
     }),
     {

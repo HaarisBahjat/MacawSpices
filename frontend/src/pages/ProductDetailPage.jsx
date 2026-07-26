@@ -313,59 +313,76 @@ export default function ProductDetailPage() {
         </div>
       </section>
 
-      {/* Customer Reviews Section (Myntra Style Detailed View) */}
-      <section className="py-20 bg-surface border-b border-outline-variant/30" id="reviews-section">
-        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-16">
-          <div className="mb-10">
-            <span className="text-xs uppercase tracking-[0.2em] font-bold text-outline mb-1 block">Customer Feedback</span>
-            <h2 className="font-serif text-3xl sm:text-4xl text-primary font-bold">Ratings & Reviews</h2>
+      {/* Customer Reviews Section (High-End Apothecary & Myntra Hybrid Design) */}
+      <section className="py-24 bg-gradient-to-b from-surface via-surface-container-lowest to-surface border-b border-outline-variant/30 relative overflow-hidden" id="reviews-section">
+        {/* Background Subtle Accent Glow */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-10 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-container-max mx-auto px-4 sm:px-8 lg:px-16 relative z-10">
+          <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-outline-variant/30 pb-8">
+            <div>
+              <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.25em] text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 mb-3">
+                <span className="material-symbols-outlined text-[14px]">verified</span>
+                Verified Connoisseur Feedback
+              </span>
+              <h2 className="font-serif text-4xl sm:text-5xl text-primary font-bold tracking-tight">
+                Ratings & Culinary Impressions
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm text-on-surface-variant max-w-md leading-relaxed">
+              Unvarnished tasting notes, aroma intensity ratings, and gastronomic pairings shared by discerning home cooks and chefs.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            {/* Left: Overall Ratings Breakdown (Myntra Style) */}
+            {/* Left: Overall Ratings Breakdown (Dark Luxury Card) */}
             <div className="lg:col-span-7 space-y-8">
               
-              {/* Myntra Rating Summary Box */}
-              <div className="bg-surface-container-low p-6 sm:p-8 rounded-2xl border border-outline-variant/40 shadow-xs flex flex-col sm:flex-row gap-8 items-center">
+              {/* Luxury Rating Summary Card */}
+              <div className="bg-gradient-to-br from-[#0c2419] to-[#061710] text-white p-8 sm:p-10 rounded-3xl border border-primary/30 shadow-xl relative overflow-hidden flex flex-col sm:flex-row gap-8 items-center">
                 
                 {/* Score badge & total count */}
-                <div className="text-center sm:text-left sm:pr-8 sm:border-r border-outline-variant/40 shrink-0">
-                  <div className="flex items-baseline justify-center sm:justify-start gap-2">
-                    <span className="font-serif text-5xl sm:text-6xl font-bold text-primary">
+                <div className="text-center sm:text-left sm:pr-10 sm:border-r border-white/10 shrink-0">
+                  <div className="flex items-baseline justify-center sm:justify-start gap-3">
+                    <span className="font-serif text-6xl sm:text-7xl font-bold text-amber-400 tracking-tight">
                       {(product.avgRating || 5.0).toFixed(1)}
                     </span>
-                    <span className="material-symbols-outlined text-emerald-800 text-3xl sm:text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      star
-                    </span>
+                    <div className="flex flex-col">
+                      <div className="flex text-amber-400 gap-1 text-lg">
+                        {[1, 2, 3, 4, 5].map((st) => (
+                          <span key={st} className="material-symbols-outlined text-[22px] drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                            star
+                          </span>
+                        ))}
+                      </div>
+                      <span className="text-[10px] text-emerald-200 uppercase tracking-widest font-semibold mt-1">Out of 5 Stars</span>
+                    </div>
                   </div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-on-surface mt-2">
-                    {product.reviews?.length || 0} Ratings & Reviews
+
+                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-100/90 mt-4">
+                    {product.reviews?.length || 0} Verified Ratings
                   </p>
-                  <p className="text-[11px] text-outline mt-0.5">Verified Buyer Feedback</p>
+                  <p className="text-[11px] text-emerald-300/60 mt-0.5">100% Authentic Quality</p>
                 </div>
 
                 {/* 5-Star Breakdown Progress Bars */}
-                <div className="flex-1 w-full space-y-2">
+                <div className="flex-1 w-full space-y-2.5">
                   {[5, 4, 3, 2, 1].map((star) => {
                     const count = product.ratingCounts?.[star] || (product.reviews || []).filter(r => r.rating === star).length;
                     const total = product.reviews?.length || 1;
                     const pct = total > 0 ? Math.round((count / total) * 100) : (star === 5 ? 100 : 0);
                     
-                    let barColor = 'bg-emerald-800';
-                    if (star === 3) barColor = 'bg-amber-500';
-                    if (star === 2) barColor = 'bg-orange-500';
-                    if (star === 1) barColor = 'bg-rose-500';
-
                     return (
                       <div key={star} className="flex items-center gap-3 text-xs">
-                        <span className="font-bold text-on-surface w-6 text-right shrink-0">{star} ★</span>
-                        <div className="flex-1 h-2.5 bg-surface-container rounded-full overflow-hidden border border-outline-variant/20">
+                        <span className="font-bold text-amber-300 w-8 text-right shrink-0">{star} ★</span>
+                        <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden border border-white/10 p-0.5 backdrop-blur-xs">
                           <div
-                            className={`h-full ${barColor} transition-all duration-700`}
+                            className="h-full rounded-full bg-gradient-to-r from-amber-400 via-emerald-400 to-emerald-500 transition-all duration-1000 shadow-[0_0_10px_rgba(52,211,153,0.5)]"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <span className="text-[11px] text-outline font-semibold w-10 text-right shrink-0">{count}</span>
+                        <span className="text-[11px] text-emerald-200/80 font-mono font-semibold w-10 text-right shrink-0">{count}</span>
                       </div>
                     );
                   })}
@@ -374,18 +391,18 @@ export default function ProductDetailPage() {
 
               {/* Star Rating Filter Pills */}
               <div className="flex items-center gap-2 flex-wrap pt-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-outline mr-2">Filter Reviews:</span>
+                <span className="text-xs font-bold uppercase tracking-[0.15em] text-outline mr-2">Filter By:</span>
                 {['ALL', '5', '4', '3', '2', '1'].map((st) => (
                   <button
                     key={st}
                     onClick={() => setStarFilter(st)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                    className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border ${
                       starFilter === st
-                        ? 'bg-primary text-on-primary border-primary shadow-xs'
-                        : 'bg-surface-container-low text-on-surface border-outline-variant/50 hover:bg-surface-container'
+                        ? 'bg-primary text-on-primary border-primary shadow-md scale-105'
+                        : 'bg-surface-container-low text-on-surface border-outline-variant/60 hover:bg-surface-container hover:border-primary/40'
                     }`}
                   >
-                    {st === 'ALL' ? 'All Reviews' : `${st} ★`}
+                    {st === 'ALL' ? '✦ All Impressions' : `${st} Stars`}
                   </button>
                 ))}
               </div>
@@ -395,35 +412,35 @@ export default function ProductDetailPage() {
                 {product.reviews && product.reviews.length > 0 ? (
                   (starFilter === 'ALL' ? product.reviews : product.reviews.filter(r => r.rating === Number(starFilter)))
                     .map((rev) => (
-                      <div key={rev.id} className="p-6 rounded-xl bg-surface-container-low border border-outline-variant/40 shadow-xs space-y-3">
+                      <div key={rev.id} className="p-7 rounded-2xl bg-surface-container-low border border-outline-variant/40 shadow-xs hover:shadow-md transition-shadow space-y-4 border-l-4 border-l-primary">
                         <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center shrink-0 border border-primary/20">
-                              {rev.user?.name ? rev.user.name[0].toUpperCase() : 'U'}
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-emerald-900 text-on-primary font-bold text-sm flex items-center justify-center shrink-0 shadow-xs ring-2 ring-primary/20">
+                              {rev.user?.name ? rev.user.name[0].toUpperCase() : 'C'}
                             </div>
                             <div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold text-on-surface">{rev.user?.name || 'Verified Buyer'}</p>
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                  <span className="material-symbols-outlined text-[12px]">verified</span> Verified
+                              <div className="flex items-center gap-2.5">
+                                <p className="text-sm font-bold text-on-surface">{rev.user?.name || 'Verified Connoisseur'}</p>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                                  <span className="material-symbols-outlined text-[12px]">verified</span> Verified Buyer
                                 </span>
                               </div>
-                              <p className="text-[10px] text-outline font-medium mt-0.5">
+                              <p className="text-[10px] text-outline font-semibold mt-0.5">
                                 Reviewed on {new Date(rev.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                               </p>
                             </div>
                           </div>
 
-                          {/* Myntra Rating Pill */}
-                          <div className="inline-flex items-center gap-1 bg-emerald-800 text-white font-bold text-xs px-2.5 py-1 rounded-md shadow-xs">
-                            <span>{rev.rating}</span>
-                            <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                          {/* Luxury Rating Pill */}
+                          <div className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-800 to-emerald-900 text-amber-300 font-bold text-xs px-3 py-1.5 rounded-xl shadow-xs border border-emerald-600/40">
+                            <span>{rev.rating}.0</span>
+                            <span className="material-symbols-outlined text-[14px] text-amber-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                           </div>
                         </div>
 
                         {rev.comment ? (
-                          <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed pt-1">
-                            {rev.comment}
+                          <p className="text-sm text-on-surface-variant leading-relaxed font-normal pt-1 italic">
+                            "{rev.comment}"
                           </p>
                         ) : (
                           <p className="text-xs text-outline italic">Rated {rev.rating} out of 5 stars.</p>
@@ -431,39 +448,47 @@ export default function ProductDetailPage() {
                       </div>
                     ))
                 ) : (
-                  <div className="text-center py-10 bg-surface-container-low rounded-xl border border-dashed border-outline-variant/60">
-                    <span className="material-symbols-outlined text-outline text-4xl mb-2">rate_review</span>
-                    <p className="text-sm text-on-surface-variant font-medium">No reviews match your selected filter.</p>
+                  <div className="text-center py-12 bg-surface-container-low rounded-2xl border border-dashed border-outline-variant/60 p-8 space-y-3">
+                    <span className="material-symbols-outlined text-primary text-4xl mb-1">rate_review</span>
+                    <h4 className="font-serif text-lg font-bold text-on-surface">No reviews found for this selection</h4>
+                    <p className="text-xs text-on-surface-variant max-w-sm mx-auto">
+                      Be the first discerning customer to submit an impression for this spice reserve.
+                    </p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Right: Write a Review Block (5-Star & Description Textarea) */}
+            {/* Right: Write a Review Block (Elevated Glass Card) */}
             <div className="lg:col-span-5">
-              <div className="bg-surface-container-low p-8 rounded-2xl border border-outline-variant/40 sticky top-28 shadow-sm space-y-6">
-                <div>
-                  <h3 className="font-serif text-2xl font-bold text-primary mb-1">Rate & Review Product</h3>
-                  <p className="text-xs text-on-surface-variant leading-relaxed">
-                    Share your experience with {product.name} to help other spice connoisseurs.
-                  </p>
+              <div className="bg-surface-container-low/90 backdrop-blur-md p-8 sm:p-10 rounded-3xl border border-outline-variant/60 sticky top-28 shadow-xl space-y-6">
+                <div className="flex items-center gap-3 border-b border-outline-variant/30 pb-5">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">edit_note</span>
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-2xl font-bold text-primary">Write Impression</h3>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">
+                      Rate this harvest & describe flavor profiles.
+                    </p>
+                  </div>
                 </div>
 
                 {isAuthenticated ? (
-                  <form onSubmit={handleSubmitReview} className="space-y-5">
+                  <form onSubmit={handleSubmitReview} className="space-y-6">
                     
                     {/* Interactive 5-Star Selection */}
                     <div>
-                      <div className="flex justify-between items-center mb-2">
+                      <div className="flex justify-between items-center mb-3">
                         <label className="text-xs font-bold uppercase tracking-wider text-on-surface">
-                          Select Star Rating
+                          Your Rating
                         </label>
-                        <span className="text-xs font-bold text-emerald-800">
-                          {['', '1 - Poor', '2 - Average', '3 - Good', '4 - Very Good', '5 - Excellent'][(hoverRating || reviewRating)]}
+                        <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                          {['', '1.0 — Poor Harvest', '2.0 — Average Quality', '3.0 — Good Spice', '4.0 — Very Fine Reserve', '5.0 — Exceptional Specimen'][(hoverRating || reviewRating)]}
                         </span>
                       </div>
 
-                      <div className="flex gap-2 p-3 bg-surface rounded-xl border border-outline-variant/40 justify-center">
+                      <div className="flex gap-3 p-4 bg-surface rounded-2xl border border-outline-variant/60 justify-center shadow-inner">
                         {[1, 2, 3, 4, 5].map((star) => {
                           const active = star <= (hoverRating || reviewRating);
                           return (
@@ -477,8 +502,8 @@ export default function ProductDetailPage() {
                               title={`Rate ${star} star${star > 1 ? 's' : ''}`}
                             >
                               <span
-                                className={`material-symbols-outlined text-[32px] transition-colors ${
-                                  active ? 'text-amber-500' : 'text-outline-variant'
+                                className={`material-symbols-outlined text-[36px] transition-all ${
+                                  active ? 'text-amber-500 drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]' : 'text-outline-variant/60 hover:text-amber-300'
                                 }`}
                                 style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
                               >
@@ -493,35 +518,40 @@ export default function ProductDetailPage() {
                     {/* Description Textarea */}
                     <div>
                       <label className="text-xs font-bold uppercase tracking-wider text-on-surface block mb-2">
-                        Write Detailed Description / Review
+                        Detailed Review & Tasting Notes
                       </label>
                       <textarea
-                        rows={4}
+                        rows={5}
                         value={reviewComment}
                         onChange={(e) => setReviewComment(e.target.value)}
-                        placeholder="Write your review here... Mention aroma, freshness, grind quality, culinary results, etc."
-                        className="w-full bg-surface border border-outline-variant/50 rounded-xl p-3.5 text-xs text-on-surface focus:ring-2 focus:ring-primary outline-none transition-all resize-none"
+                        placeholder="Describe flavor intensity, aroma notes, dish applications, and grind texture..."
+                        className="w-full bg-surface border border-outline-variant/60 rounded-2xl p-4 text-xs sm:text-sm text-on-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-none shadow-inner leading-relaxed"
                       />
                     </div>
 
+                    {/* High-End Submit Button */}
                     <button
                       type="submit"
                       disabled={isSubmittingReview}
-                      className="w-full bg-primary text-on-primary h-13 rounded-xl text-xs font-bold uppercase tracking-[0.15em] hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                      className="w-full bg-gradient-to-r from-primary via-emerald-800 to-primary text-on-primary h-14 rounded-2xl text-xs font-bold uppercase tracking-[0.25em] hover:shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer shadow-md border border-emerald-400/30 disabled:opacity-50"
                     >
-                      <span className="material-symbols-outlined text-[18px]">send</span>
-                      {isSubmittingReview ? 'Submitting Review...' : 'Submit Product Review'}
+                      <span className="material-symbols-outlined text-[20px]">send</span>
+                      {isSubmittingReview ? 'Recording Impression...' : 'Submit Product Review'}
                     </button>
                   </form>
                 ) : (
-                  <div className="text-center py-8 border border-dashed border-outline-variant/60 rounded-xl bg-surface space-y-4">
-                    <span className="material-symbols-outlined text-primary text-3xl">lock</span>
-                    <div>
-                      <p className="text-xs font-semibold text-on-surface">Have you purchased this spice reserve?</p>
-                      <p className="text-[11px] text-outline mt-1">Please sign in to write a review & rate 5 stars.</p>
+                  <div className="text-center py-10 border border-dashed border-outline-variant/60 rounded-2xl bg-surface p-6 space-y-4 shadow-inner">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                      <span className="material-symbols-outlined text-2xl">lock</span>
                     </div>
-                    <Link to="/login" className="btn-primary text-xs px-6 py-2.5 inline-block">
-                      Sign In to Review
+                    <div>
+                      <h4 className="font-serif text-base font-bold text-on-surface">Verified Purchaser Access</h4>
+                      <p className="text-xs text-outline mt-1 max-w-xs mx-auto leading-relaxed">
+                        Please sign in to write a tasting review & submit your 5-star rating for this spice reserve.
+                      </p>
+                    </div>
+                    <Link to="/login" className="btn-primary text-xs px-8 py-3.5 inline-flex items-center gap-2 rounded-xl shadow-sm">
+                      <span className="material-symbols-outlined text-[16px]">login</span> Sign In to Review
                     </Link>
                   </div>
                 )}

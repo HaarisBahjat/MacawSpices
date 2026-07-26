@@ -102,9 +102,9 @@ export default function Navbar() {
           {/* Cart */}
           <Link to="/cart" className="hover:opacity-80 transition-opacity flex items-center relative p-1" id="navbar-cart-btn" title="Shopping Cart">
             <span className="material-symbols-outlined text-primary text-[24px]">shopping_cart</span>
-            {totalItems > 0 && (
+            {items.length > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-on-primary text-[10px] rounded-full flex items-center justify-center font-bold">
-                {totalItems > 9 ? '9+' : totalItems}
+                {items.length}
               </span>
             )}
           </Link>
